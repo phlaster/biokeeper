@@ -23,7 +23,7 @@ class Research:
         return "".join(fields)
 
 
-    def generate_qrs(self, length = 12):
+    def generate_qrs(self, length = 16):
         random.seed(self.public_fields_digest())
         for i in range(self.n_samples):
             self._qrs[i+1] = ''.join(random.choice('abcdefghijklmnopqrstuvwxyz') for _ in range(length))
@@ -37,4 +37,4 @@ class Research:
                 for i in range(self.n_samples):
                     print(f"{i+1},{self._qrs[i+1]}", file=f)
             print(f"{self.n_samples} codes have been written!", file=stderr)
-    
+
