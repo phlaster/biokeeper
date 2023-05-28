@@ -1,1 +1,0 @@
-sh target/bin/webapp
