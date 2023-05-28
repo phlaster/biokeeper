@@ -16,8 +16,6 @@ def log_successfull(msg):
 
 
 class MyServer(BaseHTTPRequestHandler):
-
-
     def do_GET(self):
         if isrequest(self.path):
             log_successfull(self)
