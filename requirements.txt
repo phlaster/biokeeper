@@ -8,4 +8,7 @@ Jinja2==3.1.2
 MarkupSafe==2.1.2
 psycopg2-binary==2.9.6
 pycparser==2.21
+pypng==0.20220715.0
+qrcode==7.4.2
+typing_extensions==4.6.2
 Werkzeug==2.3.4

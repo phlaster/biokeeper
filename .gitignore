@@ -5,3 +5,4 @@ serv_env/
 settings/
 *.log
 *.csv
+*.svg
