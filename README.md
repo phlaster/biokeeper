@@ -1,2 +1,7 @@
-# opd
-Working on biosamples metadata mobile app
+# BioKeeper's backend
+
+Todo:
+
+- [ ] Introduce global research counter
+- [ ] Rework research creation ui 
+
