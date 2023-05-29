@@ -1,4 +1,3 @@
-# Python 3 server example
 ######### SERV
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from datetime import datetime, date
@@ -99,10 +98,15 @@ class MyServer(BaseHTTPRequestHandler):
             if decide_qr(qr, self):
                 if len(request) > len(qr)+1:
                     info = request[17:].split('&')
+                    if len(info) != 2:
+                        print("Wrong data after correct qr_code!", file=stderr)
+                        
                     pushInfo(db, qr, info)
                     print("New bio sample in data base!", file=stderr)
+                    self.end_headers()
                 else:
                     print("Good code, ready to get metadata!", file=stderr)
+                    self.end_headers()
             else:
                 self.end_headers()
 
