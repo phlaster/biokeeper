@@ -81,9 +81,11 @@ def main(id, research_type, n_samples, date_start, date_end):
             """,
             (new_research.id, new_research.research_type, new_research.n_samples, new_research.date_start, new_research.date_end)        
         )
+        
         update_counter(connection, n_samples)
         push_qrs(connection, new_research)
         new_research.write_codes()
+
     finally:
         connection.commit()
         dbase.close()
@@ -98,4 +100,4 @@ if __name__ == "__main__":
 
     main(id, research_type, n_samples, data_start, data_end)
 
-    print("Fin.")
+    print("Research {research_type} with id {id} has been added!", file=stderr)

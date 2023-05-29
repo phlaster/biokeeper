@@ -14,20 +14,20 @@ class Research:
         self.offset = offset
         self._qrs = {}
 
-        self.generate_qrs()
+        self._generate_qrs()
 
 
     def get_qrs(self):
         return self._qrs
 
 
-    def public_fields_digest(self):
+    def _public_fields_digest(self):
         fields = [str(v) for k, v in self.__dict__.items() if not k.startswith("_")]
         return "".join(fields)
 
 
-    def generate_qrs(self, length = 16):
-        random.seed(self.public_fields_digest())
+    def _generate_qrs(self, length = 16):
+        random.seed(self._public_fields_digest())
         for i in range(self.n_samples):
             self._qrs[i+1+self.offset] = ''.join(random.choice('abcdefghijklmnopqrstuvwxyz') for _ in range(length))
     
@@ -46,8 +46,8 @@ class Research:
         if not self._qrs:
             print("No qr codes were generated for this research!", file=stderr)
         else:
-            if not os.path.isdir(f"research{self.id}/"):
-                os.makedirs(f"research{self.id}/")
+            if not os.path.isdir(f"./research{self.id}/"):
+                os.makedirs(f"./research{self.id}/")
             for i in range(self.n_samples):
                 n = i+1+self.offset
                 qr = qrcode.QRCode(
@@ -60,3 +60,10 @@ class Research:
                 qr.make(fit=True)
                 qr.make_image(fill_color="black", back_color="white").save(f"research{self.id}/{n}.svg")
             print(f"{self.n_samples} QR images have been written!", file=stderr)
+
+
+if __name__ == "__main__":
+    print("Generating sample research files...")
+    r = Research(0,1,2,3,4,5)
+    r.write_codes()
+    r.write_pictures()
