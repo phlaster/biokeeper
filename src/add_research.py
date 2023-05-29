@@ -1,6 +1,5 @@
 """
 Args:
-    int: id of research
     str no spaces: researchtype
     int: number of samples
     YYYY.MM.DD: start # dot separated!
@@ -32,18 +31,18 @@ def connect2db(logdata):
     return connection, dbhandle
 
 
-def update_counter(connection, increment):
+def update_counter(connection, counter_name, increment):
     base = connection.cursor()
-    base.execute("SELECT * FROM countqr")
-    countqr = int(base.fetchone()[0])
-    countqr += increment
-    base.execute(f"UPDATE countqr SET qr = {str(countqr)}")
-    print(f"Global counter has been updated by {increment}", file = stderr)
+    base.execute(f"SELECT {counter_name} FROM global_counters")
+    counter = int(base.fetchone()[0])
+    counter += increment
+    base.execute(f"UPDATE global_counters SET {counter_name} = {str(counter)}")
+    print(f"Global counter {counter_name} has been updated by {increment}", file = stderr)
 
 
-def get_offset(connection, value):
+def get_offset(connection, counter):
     base = connection.cursor()
-    base.execute(f"SELECT {value} FROM countqr")
+    base.execute(f"SELECT {counter} FROM global_counters")
     return int(base.fetchone()[0])
 
 
@@ -61,18 +60,22 @@ def push_qrs(connection, research):
     print(f"{research.n_samples} qr codes have been pushed to db!", file = stderr)
 
 
-def main(id, research_type, n_samples, date_start, date_end):
+def main(research_type, n_samples, date_start, date_end):
     try:
         connection, dbase = connect2db(db)
-        offset = get_offset(connection, 'qr')
+        offset_qr = get_offset(connection, 'counter_qr')
+
+        update_counter(connection, "counter_research", 1)
+        offset_research = get_offset(connection, 'counter_research')
         
+
         new_research = Research(
-            id,
+            offset_research,
             str_to_date(date_start),
             str_to_date(date_end),
             research_type,
             n_samples,
-            offset
+            offset_qr
         )
 
         dbase.execute("""
@@ -81,10 +84,12 @@ def main(id, research_type, n_samples, date_start, date_end):
             """,
             (new_research.id, new_research.research_type, new_research.n_samples, new_research.date_start, new_research.date_end)        
         )
-        
-        update_counter(connection, n_samples)
+        update_counter(connection, "counter_qr", n_samples)
+
+
         push_qrs(connection, new_research)
         new_research.write_codes()
+        new_research.write_pictures()
 
     finally:
         connection.commit()
@@ -93,11 +98,10 @@ def main(id, research_type, n_samples, date_start, date_end):
 
 
 if __name__ == "__main__":
-    id = int(argv[1])
-    research_type = argv[2]
-    n_samples = int(argv[3])
-    data_start, data_end = argv[4], argv[5]
+    research_type = argv[1]
+    n_samples = int(argv[2])
+    data_start, data_end = argv[3], argv[4]
 
-    main(id, research_type, n_samples, data_start, data_end)
+    main(research_type, n_samples, data_start, data_end)
 
-    print(f"Research {research_type} with id {id} has been added!", file=stderr)
+    print(f"Research {research_type} with {n_samples} samples has been added!", file=stderr)
