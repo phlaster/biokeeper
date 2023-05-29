@@ -34,7 +34,6 @@ def extract_research_params(connection, id):
         )
         return extracted
     finally:
-        print("after")
         base.close()
     
 
