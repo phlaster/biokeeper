@@ -36,6 +36,8 @@ class Research:
         if not self._qrs:
             print("No qr codes were generated for this research!", file=stderr)
         else:
+            if not os.path.isdir(f"./research{self.id}/"):
+                os.makedirs(f"./research{self.id}/")
             with open(f"research{self.id}/research{self.id}_{self.n_samples}qrs.csv", "w") as f:
                 for i in range(self.n_samples):
                     print(f"{i+1+self.offset},{self._qrs[i+1+self.offset]}", file=f)
