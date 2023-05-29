@@ -4,5 +4,7 @@ venv/
 serv_env/
 settings/
 *.log
+
 *.csv
 *.svg
+**/research*/**
