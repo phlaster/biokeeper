@@ -53,15 +53,15 @@ def is_expired(qr):
 def decide_qr(qr, handler):
     if not in_db(qr):
         handler.send_response(422) # Unprocessable Content (no such qr code)
-        print("Incorrect QR!", file=stderr)
+        print("\nIncorrect QR!\n", file=stderr)
         return False
     elif is_expired(qr):
         handler.send_response(406) # Not Acceptable (qrcode is expired)
-        print("Research expired!", file=stderr)
+        print("\nResearch expired!\n", file=stderr)
         return False
     elif is_used(qr):
         handler.send_response(410) # Gone (qrcode is used)
-        print("QR is second-hand!", file=stderr)
+        print("\nQR is second-hand!\n", file=stderr)
         return False
     else:
         handler.send_response(200) # ALL GOOD
@@ -88,24 +88,24 @@ class MyServer(BaseHTTPRequestHandler):
     def do_GET(self):
         if isrequest(self.path):
             log_correct_request(self)
-            print("Path: ",self.path)
+            # print("Path: ",self.path)
             request = self.path[5:]
-            print("Request: ", request)
-            print("Length of request: ", len(request))
+            # print("Request: ", request)
+            # print("Length of request: ", len(request))
             qr = request[0:16]
-            print("QR: ", qr)
+            # print("QR: ", qr)
 
             if decide_qr(qr, self):
                 if len(request) > len(qr)+1:
                     info = request[17:].split('&')
                     if len(info) != 2:
-                        print("Wrong data after correct qr_code!", file=stderr)
+                        print("\nWrong data after correct qr_code!\n", file=stderr)
                         
                     pushInfo(db, qr, info)
-                    print("New bio sample in data base!", file=stderr)
+                    print("\nNew bio sample in data base!\n", file=stderr)
                     self.end_headers()
                 else:
-                    print("Good code, ready to get metadata!", file=stderr)
+                    print("\nGood code, ready to get metadata!\n", file=stderr)
                     self.end_headers()
             else:
                 self.end_headers()
@@ -113,7 +113,7 @@ class MyServer(BaseHTTPRequestHandler):
         else:
             self.send_response(400) # BAD REQUEST
             self.end_headers()
-            print("Bad request!", file=stderr)
+            print("\nBad request!\n", file=stderr)
 
 
 
