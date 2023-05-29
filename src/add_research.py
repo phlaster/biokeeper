@@ -38,51 +38,64 @@ def update_counter(connection, increment):
     countqr = int(base.fetchone()[0])
     countqr += increment
     base.execute(f"UPDATE countqr SET qr = {str(countqr)}")
-    connection.commit()
     print(f"Global counter has been updated by {increment}", file = stderr)
+
+
+def get_offset(connection, value):
+    base = connection.cursor()
+    base.execute(f"SELECT {value} FROM countqr")
+    return int(base.fetchone()[0])
+
+
+def push_qrs(connection, research):
+    base = connection.cursor()
+    qrcodes = research.get_qrs()
+
+    for i in range(research.offset+1, research.offset+1+research.n_samples):
+        base.execute("""
+            INSERT INTO sampl (id_samp, id_res, qrtest)
+            VALUES (%s, %s, %s);
+            """,
+            (i, research.id, qrcodes[i])        
+        )
+    print(f"{research.n_samples} qr codes have been pushed to db!", file = stderr)
 
 
 def main(id, research_type, n_samples, date_start, date_end):
     try:
         connection, dbase = connect2db(db)
-
-        dbase.execute("SELECT * FROM countqr")
-        print(int(dbase.fetchone()[0])) # before increment
-
-        update_counter(connection, int(n_samples))
+        offset = get_offset(connection, 'qr')
         
-        dbase.execute("SELECT * FROM countqr")
-        print(int(dbase.fetchone()[0])) # after increment
+        new_research = Research(
+            id,
+            str_to_date(date_start),
+            str_to_date(date_end),
+            research_type,
+            n_samples,
+            offset
+        )
 
-        
-        # n_r = Research(
-        #     int(id),
-        #     str_to_date(date_start),
-        #     str_to_date(date_end),
-        #     research_type,
-        #     int(n_samples)
-        # )
-
-        # dbase.execute("""
-        #     INSERT INTO reseach (id_res, type, num_samp, data_start, data_end)
-        #     VALUES (%s, %s, %s, %s, %s);
-        #     """,
-        #     (n_r.id, n_r.research_type, n_r.n_samples, n_r.date_start, n_r.date_end)        
-        # )
-        # connection.commit()
-
-        # dbase.execute("SELECT * FROM reseach")
-        # data = dbase.fetchone()
-        # print("This is data:\n", data)
-
-
+        dbase.execute("""
+            INSERT INTO reseach (id_res, type, num_samp, data_start, data_end)
+            VALUES (%s, %s, %s, %s, %s);
+            """,
+            (new_research.id, new_research.research_type, new_research.n_samples, new_research.date_start, new_research.date_end)        
+        )
+        update_counter(connection, n_samples)
+        push_qrs(connection, new_research)
+        new_research.write_codes()
     finally:
+        connection.commit()
         dbase.close()
         connection.close()
 
 
 if __name__ == "__main__":
-    main(argv[1], argv[2], argv[3], argv[4], argv[5])
+    id = int(argv[1])
+    research_type = argv[2]
+    n_samples = int(argv[3])
+    data_start, data_end = argv[4], argv[5]
+
+    main(id, research_type, n_samples, data_start, data_end)
+
     print("Fin.")
-
-

@@ -1,49 +1,121 @@
 # Python 3 server example
+######### SERV
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from datetime import datetime
+from datetime import datetime, date
 import time
 
-hostName = "0.0.0.0" #"localhost"
+
+######### DB
+from settings.db_settings import db
+from sys import stderr
+from sys import argv
+import psycopg2
+
+from add_research import connect2db
+from settings.db_settings import db, real_host
+
+
+
+hostName = "0.0.0.0"
 serverPort = 8080
 
 
 def isrequest(path):
     return path.startswith('/req/')
 
-def log_successfull(msg):
+def log_correct_request(msg):
     with open("logs.log", "a") as log:
-        print(datetime.now(), msg.path[5:], file=log)
+        ip = msg.client_address[0]
+        request = msg.path[5:]
+        print(datetime.now(), ip, request, file=log, sep=' ')
 
+def in_db(qr):
+    connection, base = connect2db(db)
+    base.execute(f"SELECT qrtest FROM sampl WHERE qrtest='{qr}'")
+    x = base.fetchone()
+    return x != None
+
+def is_used(qr):
+    connection, base = connect2db(db)
+    base.execute(f"SELECT id_samp FROM sampl WHERE qrtest='{qr}'") # FINDS sample ID from QRcode
+    id_sample = int(base.fetchone()[0])
+    base.execute(f"SELECT id_sample FROM data WHERE id_sample={id_sample}")
+    x = base.fetchone()
+    return x != None
+
+def is_expired(qr):
+    connection, base = connect2db(db)
+    base.execute(f"SELECT id_res FROM sampl WHERE qrtest='{qr}'") # FINDS sample ID from QRcode
+    id_res = int(base.fetchone()[0])
+    base.execute(f"SELECT data_start, data_end FROM reseach WHERE id_res={id_res}")
+    date_end = base.fetchone()[1]
+    return date_end < date.today()
+
+def decide_qr(qr, handler):
+    if not in_db(qr):
+        handler.send_response(422) # Unprocessable Content (no such qr code)
+        print("Incorrect QR!", file=stderr)
+        return False
+    elif is_expired(qr):
+        handler.send_response(406) # Not Acceptable (qrcode is expired)
+        print("Research expired!", file=stderr)
+        return False
+    elif is_used(qr):
+        handler.send_response(410) # Gone (qrcode is used)
+        print("QR is second-hand!", file=stderr)
+        return False
+    else:
+        handler.send_response(200) # ALL GOOD
+        return True
+
+def pushInfo(logdata, qr, content):
+    try:
+        connection, base = connect2db(logdata)
+        base.execute(f"SELECT id_samp FROM sampl WHERE qrtest='{qr}'")
+        id_sample = int(base.fetchone()[0])
+
+        base.execute("""
+                INSERT INTO data (id_sample, date, time, temperature, gps)
+                VALUES (%s, %s, %s, %s, POINT(%s));
+                """,
+                (id_sample, date.today(), datetime.now(), int(float(content[0])), content[1])        
+            )
+    finally:
+        connection.commit()
+        base.close()
+        connection.close()
 
 class MyServer(BaseHTTPRequestHandler):
     def do_GET(self):
         if isrequest(self.path):
-            log_successfull(self)
-            
-            self.send_response(200)
+            log_correct_request(self)
+            print("Path: ",self.path)
+            request = self.path[5:]
+            print("Request: ", request)
+            print("Length of request: ", len(request))
+            qr = request[0:16]
+            print("QR: ", qr)
+
+            if decide_qr(qr, self):
+                if len(request) > len(qr)+1:
+                    info = request[17:].split('&')
+                    pushInfo(db, qr, info)
+                    print("New bio sample in data base!", file=stderr)
+                else:
+                    print("Good code, ready to get metadata!", file=stderr)
+            else:
+                self.end_headers()
+
         else:
-            self.send_response(400)
-
-        self.end_headers()
-        print(self.path)
-
-    # def do_POST(self):
-    #     content_length = int(self.headers['Content-Length'])
-    #     body = self.rfile.read(content_length)
-    #     self.send_response(200)
-    #     self.send_header('Content-type', 'text/html')
-    #     self.end_headers()
-    #     response = BytesIO()
-    #     response.write(b'This is POST request. ')
-    #     response.write(b'Received: ')
-    #     response.write(body)
-    #     self.wfile.write(response.getvalue())
+            self.send_response(400) # BAD REQUEST
+            self.end_headers()
+            print("Bad request!", file=stderr)
 
 
 
 if __name__ == "__main__":        
     webServer = HTTPServer((hostName, serverPort), MyServer)
-    print("Server started http://%s:%s" % (hostName, serverPort))
+    print("Server started http://%s:%s" % (real_host, serverPort))
 
     try:
         webServer.serve_forever()
