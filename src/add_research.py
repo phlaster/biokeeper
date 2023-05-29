@@ -100,4 +100,4 @@ if __name__ == "__main__":
 
     main(id, research_type, n_samples, data_start, data_end)
 
-    print("Research {research_type} with id {id} has been added!", file=stderr)
+    print(f"Research {research_type} with id {id} has been added!", file=stderr)
