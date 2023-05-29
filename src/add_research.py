@@ -4,7 +4,6 @@ Args:
     int: number of samples
     YYYY.MM.DD: start # dot separated!
     YYYY.MM.DD: end
-
 """
 from Research import Research
 from settings.db_settings import db
@@ -32,32 +31,42 @@ def connect2db(logdata):
 
 
 def update_counter(connection, counter_name, increment):
-    base = connection.cursor()
-    base.execute(f"SELECT {counter_name} FROM global_counters")
-    counter = int(base.fetchone()[0])
-    counter += increment
-    base.execute(f"UPDATE global_counters SET {counter_name} = {str(counter)}")
-    print(f"Global counter {counter_name} has been updated by {increment}", file = stderr)
+    try:
+        base = connection.cursor()
+        base.execute(f"SELECT {counter_name} FROM global_counters")
+        counter = int(base.fetchone()[0])
+        counter += increment
+        base.execute(f"UPDATE global_counters SET {counter_name} = {str(counter)}")
+        print(f"Global counter {counter_name} has been updated by {increment}", file = stderr)
+    finally:
+        base.close()
 
 
 def get_offset(connection, counter):
-    base = connection.cursor()
-    base.execute(f"SELECT {counter} FROM global_counters")
-    return int(base.fetchone()[0])
+    try:
+        base = connection.cursor()
+        base.execute(f"SELECT {counter} FROM global_counters")
+        offset = int(base.fetchone()[0])
+        return offset
+    finally:
+        base.close()
 
 
 def push_qrs(connection, research):
-    base = connection.cursor()
-    qrcodes = research.get_qrs()
+    try:
+        base = connection.cursor()
+        qrcodes = research.get_qrs()
 
-    for i in range(research.offset+1, research.offset+1+research.n_samples):
-        base.execute("""
-            INSERT INTO sampl (id_samp, id_res, qrtest)
-            VALUES (%s, %s, %s);
-            """,
-            (i, research.id, qrcodes[i])        
-        )
-    print(f"{research.n_samples} qr codes have been pushed to db!", file = stderr)
+        for i in range(research.offset+1, research.offset+1+research.n_samples):
+            base.execute("""
+                INSERT INTO sampl (id_samp, id_res, qrtest)
+                VALUES (%s, %s, %s);
+                """,
+                (i, research.id, qrcodes[i])        
+            )
+        print(f"{research.n_samples} qr codes have been pushed to db!", file = stderr)
+    finally:
+        base.close()
 
 
 def main(research_type, n_samples, date_start, date_end):
