@@ -60,6 +60,3 @@ class Research:
                 qr.make(fit=True)
                 qr.make_image(fill_color="black", back_color="white").save(f"research{self.id}/{n}.svg")
             print(f"{self.n_samples} QR images have been written!", file=stderr)
-
-r = Research(1,2,3,4,5,6)
-r.write_pictures()
