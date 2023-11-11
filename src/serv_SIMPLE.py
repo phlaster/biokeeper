@@ -14,11 +14,6 @@ from add_research import connect2db
 from settings.db_settings import db, real_host
 
 
-
-hostName = "0.0.0.0"
-serverPort = 8080
-
-
 def isrequest(path):
     return path.startswith('/req/')
 
@@ -114,17 +109,3 @@ class MyServer(BaseHTTPRequestHandler):
             self.send_response(400) # BAD REQUEST
             self.end_headers()
             print("\nBad request!\n", file=stderr)
-
-
-
-if __name__ == "__main__":        
-    webServer = HTTPServer((hostName, serverPort), MyServer)
-    print("Server started http://%s:%s" % (real_host, serverPort))
-
-    try:
-        webServer.serve_forever()
-    except KeyboardInterrupt:
-        pass
-    finally:
-        webServer.server_close()
-        print("Server stopped.")
