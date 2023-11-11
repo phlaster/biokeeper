@@ -5,43 +5,49 @@ C.l. args:
 
 from Research import Research
 from settings.db_settings import db
-from sys import argv
+import sys
 from add_research import connect2db
 
 
-def date_to_str(d):
+def date_to_str(d) -> str:
     return '.'.join(str(d).split("-"))
 
-
-def extract_research_params(connection, id):
+def extract_research_params(connection, id) -> tuple:
     try:
         base = connection.cursor()
         base.execute(f"SELECT * FROM reseach WHERE id_res={id}")
-        got = base.fetchone()
-        assert got != None, f"No research with id {id} was found!" 
+        extracted = base.fetchone()
 
+        assert extracted != None, f"No research with id {id} was found!" 
+
+        research_id = int(extracted[0])
+        date_start = date_to_str(extracted[3])
+        date_end = date_to_str(extracted[4])
+        research_type = extracted[1]
+        n_samples = int(extracted[2])
+    
         base.execute("SELECT COUNT(*) FROM sampl WHERE id_res < %s", (id,))
-        offset = int(base.fetchone()[0])
+        qr_offset = int(base.fetchone()[0])
 
-        
-        extracted = (
-            int(got[0]),
-            date_to_str(got[3]),
-            date_to_str(got[4]),
-            got[1],
-            int(got[2]),
-            offset
+        params = (
+            research_id,
+            date_start,
+            date_end,
+            research_type,
+            n_samples,
+            qr_offset
         )
-        return extracted
+
+        return params
     finally:
         base.close()
-    
-
 
 def main():
     try:
+        research_id = sys.argv[1]
+
         connection, dbase = connect2db(db)
-        params = extract_research_params(connection, argv[1])
+        params = extract_research_params(connection, research_id)
         r = Research(*params)
         r.write_codes()
         r.write_pictures()
@@ -50,6 +56,10 @@ def main():
         dbase.close()
         connection.close()
 
-
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+        print(f"Research has been regenerated!", file=sys.stderr)
+
+    except e:
+        print(e)

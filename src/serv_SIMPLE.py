@@ -14,22 +14,22 @@ from add_research import connect2db
 from settings.db_settings import db, real_host
 
 
-def isrequest(path):
+def isrequest(path) -> bool:
     return path.startswith('/req/')
 
-def log_correct_request(msg):
+def log_correct_request(msg) -> None:
     with open("logs.log", "a") as log:
         ip = msg.client_address[0]
         request = msg.path[5:]
         print(datetime.now(), ip, request, file=log, sep=' ')
 
-def in_db(qr):
+def in_db(qr) -> bool:
     connection, base = connect2db(db)
     base.execute(f"SELECT qrtest FROM sampl WHERE qrtest='{qr}'")
     x = base.fetchone()
     return x != None
 
-def is_used(qr):
+def is_used(qr) -> bool:
     connection, base = connect2db(db)
     base.execute(f"SELECT id_samp FROM sampl WHERE qrtest='{qr}'") # FINDS sample ID from QRcode
     id_sample = int(base.fetchone()[0])
@@ -37,7 +37,7 @@ def is_used(qr):
     x = base.fetchone()
     return x != None
 
-def is_expired(qr):
+def is_expired(qr) -> bool:
     connection, base = connect2db(db)
     base.execute(f"SELECT id_res FROM sampl WHERE qrtest='{qr}'") # FINDS sample ID from QRcode
     id_res = int(base.fetchone()[0])
@@ -45,7 +45,7 @@ def is_expired(qr):
     date_end = base.fetchone()[1]
     return date_end < date.today()
 
-def decide_qr(qr, handler):
+def decide_qr(qr, handler) -> bool:
     if not in_db(qr):
         handler.send_response(422) # Unprocessable Content (no such qr code)
         print("\nIncorrect QR!\n", file=stderr)
@@ -62,7 +62,7 @@ def decide_qr(qr, handler):
         handler.send_response(200) # ALL GOOD
         return True
 
-def pushInfo(logdata, qr, content):
+def pushInfo(logdata, qr, content) -> None:
     try:
         connection, base = connect2db(logdata)
         base.execute(f"SELECT id_samp FROM sampl WHERE qrtest='{qr}'")
