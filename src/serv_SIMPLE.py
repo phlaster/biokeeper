@@ -18,7 +18,7 @@ def isrequest(path) -> bool:
     return path.startswith('/req/')
 
 def log_correct_request(msg) -> None:
-    with open("logs.log", "a") as log:
+    with open("/logs.log", "a") as log:
         ip = msg.client_address[0]
         request = msg.path[5:]
         print(datetime.now(), ip, request, file=log, sep=' ')
@@ -81,14 +81,16 @@ def pushInfo(logdata, qr, content) -> None:
 
 class MyServer(BaseHTTPRequestHandler):
     def do_GET(self):
+        """ in Java:
+            String temp_c = String.valueOf(data.getDouble("temp_c"));
+            String geopos =  location.getLatitude() +"," + location.getLongitude();
+            String result_for_server = temp_c+"&"+geopos;
+            "http://78.24.223.131:8080/req/"+qr_code+"/"+result_for_server
+        """
         if isrequest(self.path):
             log_correct_request(self)
-            # print("Path: ",self.path)
             request = self.path[5:]
-            # print("Request: ", request)
-            # print("Length of request: ", len(request))
             qr = request[0:16]
-            # print("QR: ", qr)
 
             if decide_qr(qr, self):
                 if len(request) > len(qr)+1:
