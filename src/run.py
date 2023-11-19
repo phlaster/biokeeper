@@ -6,7 +6,7 @@ serverPort = 8080
 
 if __name__ == "__main__":        
     webServer = HTTPServer((hostName, serverPort), MyServer)
-    print("Server started http://%s:%s" % (real_host, serverPort))
+    print(f"Server started at port {serverPort}")
 
     try:
         webServer.serve_forever()

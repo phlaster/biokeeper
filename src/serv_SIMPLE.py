@@ -11,7 +11,7 @@ from sys import argv
 import psycopg2
 
 from add_research import connect2db
-from settings.db_settings import db, real_host
+from settings.db_settings import db
 
 
 def isrequest(path) -> bool:
