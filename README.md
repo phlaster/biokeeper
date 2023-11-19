@@ -2,6 +2,7 @@
 
 Todo:
 
-- [ ] Introduce global research counter
-- [ ] Rework research creation ui 
+- [ ] filter out repetitive identical requests from same IP from logging
+- [ ] DATABASE, cmon!
+
 
