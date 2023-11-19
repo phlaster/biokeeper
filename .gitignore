@@ -2,7 +2,6 @@ __pycache__/
 logs/
 venv/
 serv_env/
-settings/
 *.log
 
 *.csv
