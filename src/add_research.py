@@ -11,7 +11,8 @@ import sys
 from datetime import date
 
 from Research import Research
-from settings.db_settings import db
+sys.path.append('/') # in Docker container db_settings will be mounted at /
+from db_settings import db
 
 
 def str_to_date(s):
@@ -115,5 +116,5 @@ if __name__ == "__main__":
     try:
         main()
         print(f"Research {research_type} with {n_samples} samples has been added!", file=sys.stderr)
-    except e:
+    except OSError as e:
         print(e)
