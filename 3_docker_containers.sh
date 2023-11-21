@@ -1,9 +1,14 @@
 # this creates: user=postgres, database name=postgres. Connect through ssh server_ip:22, host=localhost
-docker run --name 'containername' -p 127.0.0.1:5432:5432 -e POSTGRES_PASSWORD='password' -d postgres;
+docker run -d --network=dockernet --name db_postgres -e POSTGRES_PASSWORD='1234' -p 127.0.0.1:5432:5432 postgres;
 
 touch sucsessful_requests.log;
 # this creates container with running server -it for interactive, -d for detached mode
-docker run -d -v ./init.sh:/init.sh:ro -v ./sucsessful_requests.log:/logs.log -e GIT_TOKEN=$(cat token.txt) --name python_server -p 1337:8080 ubuntu /bin/bash /init.sh;
+docker run -d --network=dockernet --name python_server -v ./settings/db_settings.py:/db_settings.py:ro -v ./init.sh:/init.sh:ro -v ./sucsessful_requests.log:/logs.log -e GIT_TOKEN=$(cat token.txt) -p 1337:8080 ubuntu /bin/bash /init.sh;
 # 
-# Back insiede the container (attach+interactive)
+# Back inside the container (attach+interactive)
 # docker start -ai python_server
+
+# To detach from a running Docker container without stopping it, you can use the following key combination:
+# Press Ctrl + p followed by Ctrl + q
+# To attach back to a detached Docker container, you can use the docker attach command followed by the container's name or ID. Here's how you can do it:
+# docker attach <container_name_or_id>
