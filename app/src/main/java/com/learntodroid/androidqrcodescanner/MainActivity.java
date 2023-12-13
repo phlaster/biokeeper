@@ -15,7 +15,8 @@ import com.google.zxing.integration.android.IntentResult;
 // implements onClickListener for the onclick behaviour of button
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
     Button scanBtn;
-    TextView messageText, messageFormat;
+    Button button_for_tests;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,12 +26,23 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         // referencing and initializing
         // the button and textviews
         scanBtn = findViewById(R.id.scanBtn);
-        messageText = findViewById(R.id.textContent);
-        messageFormat = findViewById(R.id.textFormat);
+
 
         // adding listener to the button
         scanBtn.setOnClickListener(this);
+        button_for_tests = findViewById(R.id.button_for_tests);
+        button_for_tests.setOnClickListener(
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Intent intent=new Intent(MainActivity.this,SecondPage.class);
+                        intent.putExtra("qr","1");
+                        startActivity(intent);
 
+
+                    }
+                }
+        );
     }
 
     @Override
@@ -56,8 +68,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             } else {
                 // if the intentResult is not null we'll set
                 // the content and format of scan message
-                messageText.setText(intentResult.getContents());
-                messageFormat.setText(intentResult.getFormatName());
+
+
 
                 String qrCode = intentResult.getContents();
 

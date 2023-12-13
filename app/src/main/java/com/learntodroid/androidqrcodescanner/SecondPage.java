@@ -46,23 +46,93 @@ public class SecondPage extends AppCompatActivity {
     private FusedLocationProviderClient fusedLocationClient;
 
     String url;
+        public static void GetData(JSONObject response,TextView Whether, String geopos, Button SendInfo,TextView Checkqr, RequestQueue requestQueue, String qr_code) {
+        try {
+            JSONObject data = response.getJSONObject("current");
+            String temp_c = String.valueOf(data.getDouble("temp_c"));
+            JSONObject condition = data.getJSONObject("condition");
+            String pogoda = condition.getString("text");
+            String wind_speed = String.valueOf(data.getDouble("wind_kph"));
+            String wind_dir = data.getString("wind_dir");
+            String pressure_mb = String.valueOf(data.getDouble("pressure_mb"));  // milli bar
+
+            String result_for_device = "Температура: " + temp_c + ", \nСостояние: " + pogoda + ", \nСкорость ветра: " + wind_speed + ", \nНаправление ветра: " + wind_dir + ", \nДавление(миллибары): " + pressure_mb;
+            Whether.setText(result_for_device);
+
+            String result_for_server = temp_c + "&" + geopos;
+
+            SendInfo.setOnClickListener(
+                    new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+
+                            StringRequest Request_for_server = new StringRequest(Request.Method.GET, "http://62.109.17.249:1337/req/" + qr_code + "/" + result_for_server, new Response.Listener<String>() {
+                                @Override
+                                public void onResponse(String response) {                // Display the first 500 characters of the response string.
+                                    Checkqr.setText("Response is: " + response);
+                                }
+                            }, new Response.ErrorListener() {
+                                @Override
+                                public void onErrorResponse(VolleyError error) {
+                                    Checkqr.setText("That didn't work!");
+                                }
+                            });
+                            requestQueue.add(Request_for_server);
 
 
-    @SuppressLint("WrongThread")
+                        }
+                    }
+            );
+
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void Success(Location location,TextView GeoPos,TextView Whether, Button SendInfo,TextView Checkqr, RequestQueue requestQueue, String qr_code){
+        // Got last known location. In some rare situations this can be null.
+        if (location != null) {
+            String geopos =  location.getLatitude() +"," + location.getLongitude();
+            GeoPos.setText(geopos);
+
+
+            String url = "https://api.weatherapi.com/v1/current.json?q="+location.getLatitude()+","+location.getLongitude()+"&key=d98e7c7729f14db6bae180859231312";
+
+            JsonObjectRequest jsonArrayRequest = new JsonObjectRequest(
+                    Request.Method.GET, url, null,
+                    new Response.Listener<JSONObject>() {
+                        @Override
+                        public void onResponse(JSONObject response)
+                        {
+                            GetData(response,Whether,geopos,SendInfo,Checkqr,requestQueue,qr_code);
+                        }
+                    },
+                    new Response.ErrorListener() {
+                        @Override
+                        public void onErrorResponse(VolleyError error)
+                        {
+                        }
+                    });
+
+            requestQueue.add(jsonArrayRequest);
+
+
+
+        }}
+
+        @SuppressLint("WrongThread")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_second_page);
 
-        Button button=findViewById(R.id.button5);
+        Button button=findViewById(R.id.SendPhoto);
         button.setOnClickListener(
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         Intent intent=new Intent(SecondPage.this,Photo_activity.class);
                         startActivity(intent);
-
-
 
                     }
                 }
@@ -95,92 +165,27 @@ public class SecondPage extends AppCompatActivity {
 
         RequestQueue requestQueue = Volley.newRequestQueue(this);
         final int[] Check_qr_status = new int[1];
-        String send_qr = "http://78.24.223.131:8080/req/"+qr_code;
+        //String send_qr = "http://62.109.17.249:1337/req/"+qr_code;
+        String send_qr = "https://api.weatherapi.com/v1/current.json?q=60,60&key=d98e7c7729f14db6bae180859231312";
         NetworkResponseRequest request = new NetworkResponseRequest(Request.Method.GET, send_qr,
                 new Response.Listener<NetworkResponse>() {
                     @Override
                     public void onResponse(NetworkResponse response) {
                         Check_qr_status[0] =response.statusCode;
                         //Checkqr.setText(String.valueOf(response.statusCode));
-                        if(Check_qr_status[0]==200){
+                        //if(Check_qr_status[0]==200){
+                        if(true){
                             Checkqr.setText("Хороший код!:)");
                             if (ActivityCompat.checkSelfPermission(SecondPage.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                                 ActivityCompat.requestPermissions(SecondPage.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, 1);
                             }
-                            /*  не открывать НИКОГДА*/      else {
+                            else {
                                 fusedLocationClient = LocationServices.getFusedLocationProviderClient(SecondPage.this);
                                 fusedLocationClient.getLastLocation()
                                         .addOnSuccessListener(SecondPage.this, new OnSuccessListener<Location>() {
                                             @Override
                                             public void onSuccess(Location location) {
-                                                // Got last known location. In some rare situations this can be null.
-                                                if (location != null) {
-                                                    String geopos =  location.getLatitude() +"," + location.getLongitude();
-                                                    GeoPos.setText(geopos);
-
-
-                                                    url = "https://api.weatherapi.com/v1/current.json?q="+location.getLatitude()+","+location.getLongitude()+"&key=52fb3618a2644f1b9d6115703232505";
-
-                                                    JsonObjectRequest jsonArrayRequest = new JsonObjectRequest(
-                                                            Request.Method.GET, url, null,
-                                                            new Response.Listener<JSONObject>() {
-                                                                @Override
-                                                                public void onResponse(JSONObject response)
-                                                                {
-                                                                    try {
-                                                                        JSONObject data = response.getJSONObject("current");
-                                                                        String temp_c = String.valueOf(data.getDouble("temp_c"));
-                                                                        JSONObject condition = data.getJSONObject("condition");
-                                                                        String pogoda = condition.getString("text");
-                                                                        String wind_speed = String.valueOf(data.getDouble("wind_kph"));
-                                                                        String wind_dir = data.getString("wind_dir");
-                                                                        String pressure_mb = String.valueOf(data.getDouble("pressure_mb"));  // milli bar
-
-                                                                        String result_for_device = "Температура: "+temp_c+", \nСостояние: "+pogoda+", \nСкорость ветра: "+        wind_speed+", \nНаправление ветра: "+wind_dir+", \nДавление(миллибары): "+pressure_mb;
-                                                                        Whether.setText(result_for_device);
-                                                                        /*String result_for_server = "temp="+temp_c+
-                                                                                "&wind_speed="+wind_speed+"&pressure="+String.valueOf(Double.valueOf(pressure_mb)*1000)+
-                                                                                "&"+geopos+"&date="+strDate;*/
-
-                                                                        String result_for_server = temp_c+"&"+geopos;
-
-                                                                        SendInfo.setOnClickListener(
-                                                                                new View.OnClickListener() {
-                                                                                    @Override
-                                                                                    public void onClick(View v) {
-
-                                                                                        StringRequest Request_for_server = new StringRequest(Request.Method.GET, "http://78.24.223.131:8080/req/"+qr_code+"/"+result_for_server,        new Response.Listener<String>() {
-                                                                                            @Override
-                                                                                            public void onResponse(String response) {                // Display the first 500 characters of the response string.
-                                                                                                Checkqr.setText("Response is: " + response);
-                                                                                            }
-                                                                                        }, new Response.ErrorListener() {    @Override
-                                                                                        public void onErrorResponse(VolleyError error) {
-                                                                                            Checkqr.setText("That didn't work!");
-                                                                                        }});
-                                                                                        requestQueue.add(Request_for_server);
-
-
-                                                                                    }
-                                                                                }
-                                                                        );
-
-                                                                    } catch (JSONException e) {
-                                                                        throw new RuntimeException(e);
-                                                                    }
-                                                                }
-                                                            },
-                                                            new Response.ErrorListener() {
-                                                                @Override
-                                                                public void onErrorResponse(VolleyError error)
-                                                                {
-                                                                }
-                                                            });
-
-                                                    requestQueue.add(jsonArrayRequest);
-
-
-                                                }
+                                                 Success(location,GeoPos,Whether,SendInfo,Checkqr,requestQueue,qr_code);
                                             }
                                         });
                             }}
@@ -205,6 +210,7 @@ public class SecondPage extends AppCompatActivity {
                 }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
+
                 Checkqr.setText("Error");
             }
         }
