@@ -15,12 +15,16 @@ from add_research import connect2db
 from settings.db_settings import db
 
 
-def isrequest(path) -> bool:
+def validate_request(path) -> bool:
     # pattern = r'^/req/\d{8}/'
 
-    # /req/12345678/15.0&30.00000,60.000000
+    # Matching: /req/12345678/15.0&30.00000,60.000000
     pattern = r'^/req/\d{8}/(-?\d+(\.\d+)?)&(-?\d+.\d+),(-?\d+.\d+)$'
     return re.match(pattern, path)
+
+def log_message(msg) -> None:
+    with open("/logs.log", "a") as log:
+        print(msg, file=log)
 
 def log_correct_request(msg) -> None:
     with open("/logs.log", "a") as log:
@@ -96,9 +100,9 @@ class MyServer(BaseHTTPRequestHandler):
             String temp_c = String.valueOf(data.getDouble("temp_c"));
             String geopos =  location.getLatitude() +"," + location.getLongitude();
             String result_for_server = temp_c+"&"+geopos;
-            "http://78.24.223.131:8080/req/"+qr_code_8_symbols+"/"+result_for_server
+            "http://X.X.X.X:8080/req/"+qr_code_8_symbols+"/"+result_for_server
         """
-        if isrequest(self.path):
+        if validate_request(self.path):
             log_correct_request(self)
             request = self.path[5:]
             qr = request[0:16]
