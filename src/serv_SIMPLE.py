@@ -48,21 +48,27 @@ def is_expired(qr) -> bool:
     return date_end < date.today()
 
 def decide_qr(qr, handler) -> bool:
-    if not in_db(qr):
-        handler.send_response(422) # Unprocessable Content (no such qr code)
-        print("\nIncorrect QR!\n", file=stderr)
+    try:
+        if not in_db(qr):
+            handler.send_response(422) # Unprocessable Content (no such qr code)
+            print("\nIncorrect QR!\n", file=stderr)
+            return False
+        elif is_expired(qr):
+            handler.send_response(406) # Not Acceptable (qrcode is expired)
+            print("\nResearch expired!\n", file=stderr)
+            return False
+        elif is_used(qr):
+            handler.send_response(410) # Gone (qrcode is used)
+            print("\nQR is second-hand!\n", file=stderr)
+            return False
+        else:
+            handler.send_response(200) # ALL GOOD
+            return True
+    except:
+        handler.send_response(500) # Internal Server Error (mb smthing is wrong with DB)
+        print("\nInternal Server Error! Check database status or whatever...\n", file=stderr)
         return False
-    elif is_expired(qr):
-        handler.send_response(406) # Not Acceptable (qrcode is expired)
-        print("\nResearch expired!\n", file=stderr)
-        return False
-    elif is_used(qr):
-        handler.send_response(410) # Gone (qrcode is used)
-        print("\nQR is second-hand!\n", file=stderr)
-        return False
-    else:
-        handler.send_response(200) # ALL GOOD
-        return True
+
 
 def pushInfo(logdata, qr, content) -> None:
     try:
@@ -87,7 +93,7 @@ class MyServer(BaseHTTPRequestHandler):
             String temp_c = String.valueOf(data.getDouble("temp_c"));
             String geopos =  location.getLatitude() +"," + location.getLongitude();
             String result_for_server = temp_c+"&"+geopos;
-            "http://78.24.223.131:8080/req/"+qr_code+"/"+result_for_server
+            "http://78.24.223.131:8080/req/"+qr_code_8_symbols+"/"+result_for_server
         """
         if isrequest(self.path):
             log_correct_request(self)
