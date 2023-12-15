@@ -1,24 +1,16 @@
 version: '3'
-services:
-  python_server:
-    image: ubuntu
-    command: /bin/bash /init.sh
-    volumes:
-      - ./settings/db_settings.py:/db_settings.py:ro
-      - ./init.sh:/init.sh:ro
-      - ./successful_requests.log:/logs.log
-    environment:
-      - GIT_TOKEN_FILE=/run/secrets/git_token
-    ports:
-      - "1337:8080"
-    networks:
-      - dockernet
-    secrets:
-      - git_token
 
 networks:
   dockernet:
 
-secrets:
-  git_token:
-    file: ./token.txt
+
+services:
+  python_server:
+    build: ./python
+    restart: always
+    # volumes:
+    #   - ./successful_requests.log:/logs.log
+    ports:
+      - 1337:8080
+    networks:
+      - dockernet
