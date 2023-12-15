@@ -16,7 +16,10 @@ from settings.db_settings import db
 
 
 def isrequest(path) -> bool:
-    pattern = r'^/req/\d{8}/'
+    # pattern = r'^/req/\d{8}/'
+
+    # /req/12345678/15.0&30.00000,60.000000
+    pattern = r'^/req/\d{8}/(-?\d+(\.\d+)?)&(-?\d+.\d+),(-?\d+.\d+)$'
     return re.match(pattern, path)
 
 def log_correct_request(msg) -> None:
