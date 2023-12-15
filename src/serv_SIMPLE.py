@@ -22,21 +22,25 @@ def validate_request(path) -> bool:
     pattern = r'^/req/\d{8}/(-?\d+(\.\d+)?)&(-?\d+.\d+),(-?\d+.\d+)$'
     return re.match(pattern, path)
 
+
 def log_message(msg) -> None:
     with open("/logs.log", "a") as log:
         print(msg, file=log)
 
-def log_correct_request(msg) -> None:
+
+def log_correct_request(request) -> None:
     with open("/logs.log", "a") as log:
-        ip = msg.client_address[0]
-        request = msg.path[5:]
+        ip = request.client_address[0]
+        request = request.path[5:]
         print(datetime.now(), ip, request, file=log, sep=' ')
+
 
 def in_db(qr) -> bool:
     connection, base = connect2db(db)
     base.execute(f"SELECT qrtest FROM sampl WHERE qrtest='{qr}'")
     x = base.fetchone()
     return x != None
+
 
 def is_used(qr) -> bool:
     connection, base = connect2db(db)
@@ -46,6 +50,7 @@ def is_used(qr) -> bool:
     x = base.fetchone()
     return x != None
 
+
 def is_expired(qr) -> bool:
     connection, base = connect2db(db)
     base.execute(f"SELECT id_res FROM sampl WHERE qrtest='{qr}'") # FINDS sample ID from QRcode
@@ -53,6 +58,7 @@ def is_expired(qr) -> bool:
     base.execute(f"SELECT data_start, data_end FROM reseach WHERE id_res={id_res}")
     date_end = base.fetchone()[1]
     return date_end < date.today()
+
 
 def decide_qr(qr, handler) -> bool:
     try:
@@ -93,6 +99,7 @@ def pushInfo(logdata, qr, content) -> None:
         connection.commit()
         base.close()
         connection.close()
+
 
 class MyServer(BaseHTTPRequestHandler):
     def do_GET(self):
