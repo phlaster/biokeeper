@@ -3,7 +3,10 @@ docker network create dockernet
 
 docker run -d --network=dockernet --name db_postgres -e POSTGRES_PASSWORD='1234' -p 127.0.0.1:5432:5432 postgres;
 
+# blank file for logs
 touch sucsessful_requests.log;
+
+
 # this creates container with running server -it for interactive, -d for detached mode
 docker run -d --network=dockernet --name python_server -v ./settings/db_settings.py:/db_settings.py:ro -v ./init.sh:/init.sh:ro -v ./sucsessful_requests.log:/logs.log -e GIT_TOKEN=$(cat token.txt) -p 1337:8080 ubuntu /bin/bash /init.sh;
 
