@@ -1,7 +1,7 @@
 db = {
     "db_name" : "postgres",
-    "db_host" : "db_postgres",
+    "db_host" : "localhost",
     "db_user" : "postgres",
-    "db_pass" : "1234",
-    "db_port" : 5432 
+    "db_pass" : "root",
+    "db_port" : 5432
 }

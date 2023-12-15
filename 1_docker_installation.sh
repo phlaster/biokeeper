@@ -16,7 +16,7 @@ echo \
 sudo apt-get update
 
 # Installing nescessary packages
-sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin docker-compose
 
 # Checking the installation
 sudo docker run hello-world
@@ -28,4 +28,3 @@ sudo usermod -aG docker $USER
 # After that:
 docker pull postgres:latest
 docker pull ubuntu:latest
-
