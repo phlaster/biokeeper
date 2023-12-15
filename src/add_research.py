@@ -11,7 +11,7 @@ import sys
 from datetime import date
 
 from Research import Research
-sys.path.append('/') # in Docker container db_settings will be mounted at /
+# sys.path.append('/') # in Docker container db_settings will be mounted at /
 from db_settings import db
 
 
@@ -63,7 +63,7 @@ def push_qrs(connection, research) -> None:
                 INSERT INTO sampl (id_samp, id_res, qrtest)
                 VALUES (%s, %s, %s);
                 """,
-                (i, research.id, qrcodes[i])        
+                (i, research.id, qrcodes[i])
             )
         print(f"{research.n_samples} qr codes have been pushed to db!", file = sys.stderr)
     finally:
@@ -83,7 +83,7 @@ def main():
 
         update_counter(connection, "counter_research", 1)
         research_id = get_offset(connection, 'counter_research')
-        
+
 
         new_research = Research(
             research_id,
@@ -98,7 +98,7 @@ def main():
             INSERT INTO reseach (id_res, type, num_samp, data_start, data_end)
             VALUES (%s, %s, %s, %s, %s);
             """,
-            (new_research.id, new_research.research_type, new_research.n_samples, new_research.date_start, new_research.date_end)        
+            (new_research.id, new_research.research_type, new_research.n_samples, new_research.date_start, new_research.date_end)
         )
 
 

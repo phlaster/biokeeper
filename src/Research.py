@@ -15,18 +15,22 @@ class Research:
         self.offset = offset
         self._qrs = self._generate_qrs()
 
+
     def get_qrs(self) -> dict:
         return self._qrs
+
 
     def _public_fields_digest(self) -> str:
         fields = [str(v) for k, v in self.__dict__.items() if not k.startswith("_")]
         return "".join(fields)
+
 
     def _generate_qrs(self, length=16) -> dict:
         random.seed(self._public_fields_digest())
         a_z = string.ascii_lowercase
         new_qrs = {i + 1 + self.offset : ''.join(random.choice(a_z) for _ in range(length)) for i in range(self.n_samples)}
         return new_qrs
+
 
     def write_codes(self) -> None:
         if not self._qrs:
@@ -43,13 +47,14 @@ class Research:
 
             print(f"Codes {self.offset+1} to {self.offset+self.n_samples} have been written!", file=stderr)
 
+
     def write_pictures(self) -> None:
         if not self._qrs:
             print("No qr codes were generated for this research!", file=stderr)
 
         else:
             research_dir = f"research_{self.research_id}"
-            
+
             if not os.path.isdir(research_dir):
                 os.makedirs(research_dir)
 

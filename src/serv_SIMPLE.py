@@ -6,13 +6,13 @@ import re
 
 
 ######### DB
-from settings.db_settings import db
+from db_settings import db
 from sys import stderr
 from sys import argv
 import psycopg2
 
 from add_research import connect2db
-from settings.db_settings import db
+from db_settings import db
 
 
 def validate_request(path) -> bool:
