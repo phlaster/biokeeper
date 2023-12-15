@@ -6,7 +6,7 @@ serverPort = 8080
 
 if __name__ == "__main__":
     webServer = HTTPServer((hostName, serverPort), MyServer)
-    log_message(datetime.now(), "server started at port", serverPort)
+    log_message(f"{datetime.now()} server started at port {serverPort}")
 
     try:
         webServer.serve_forever()
@@ -17,4 +17,4 @@ if __name__ == "__main__":
 
     finally:
         webServer.server_close()
-        log_message(datetime.now(), "server stopped")
+        log_message(f"{datetime.now()} server stopped")

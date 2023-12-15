@@ -24,12 +24,12 @@ def validate_request(path) -> bool:
 
 
 def log_message(msg) -> None:
-    with open("/logs.log", "a") as log:
+    with open("./logs.log", "a") as log:
         print(msg, file=log)
 
 
 def log_correct_request(request) -> None:
-    with open("/logs.log", "a") as log:
+    with open("./logs.log", "a") as log:
         ip = request.client_address[0]
         request = request.path[5:]
         print(datetime.now(), ip, request, file=log, sep=' ')
