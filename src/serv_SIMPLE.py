@@ -2,6 +2,7 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from datetime import datetime, date
 import time
+import re
 
 
 ######### DB
@@ -15,7 +16,8 @@ from settings.db_settings import db
 
 
 def isrequest(path) -> bool:
-    return path.startswith('/req/')
+    pattern = r'^/req/\d{8}/'
+    return re.match(pattern, path)
 
 def log_correct_request(msg) -> None:
     with open("/logs.log", "a") as log:
@@ -72,7 +74,7 @@ def pushInfo(logdata, qr, content) -> None:
                 INSERT INTO data (id_sample, date, time, temperature, gps)
                 VALUES (%s, %s, %s, %s, POINT(%s));
                 """,
-                (id_sample, date.today(), datetime.now(), int(float(content[0])), content[1])        
+                (id_sample, date.today(), datetime.now(), int(float(content[0])), content[1])
             )
     finally:
         connection.commit()
@@ -97,7 +99,7 @@ class MyServer(BaseHTTPRequestHandler):
                     info = request[17:].split('&')
                     if len(info) != 2:
                         print("\nWrong data after correct qr_code!\n", file=stderr)
-                        
+
                     pushInfo(db, qr, info)
                     print("\nNew bio sample in data base!\n", file=stderr)
                     self.end_headers()
