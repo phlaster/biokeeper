@@ -4,7 +4,7 @@ C.l. args:
 """
 
 from Research import Research
-from db_settings import db
+from db_settings import DB
 import sys
 from add_research import connect2db
 
@@ -48,7 +48,7 @@ def main():
     try:
         research_id = sys.argv[1]
 
-        connection, dbase = connect2db(db)
+        connection, dbase = connect2db(DB)
         params = extract_research_params(connection, research_id)
         r = Research(*params)
         r.write_codes()

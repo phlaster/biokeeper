@@ -11,7 +11,7 @@ import sys
 from datetime import date
 
 from Research import Research
-from db_settings import db
+from db_settings import DB
 
 
 def str_to_date(s):
@@ -76,7 +76,7 @@ def main():
     date_end = sys.argv[4]
 
     try:
-        connection, dbase = connect2db(db)
+        connection, dbase = connect2db(DB)
         offset_qr = get_offset(connection, 'counter_qr')
         update_counter(connection, "counter_qr", n_samples)
 
