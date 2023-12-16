@@ -4,7 +4,7 @@ C.l. args:
 """
 
 from Research import Research
-from settings.db_settings import db
+from db_settings import db
 import sys
 from add_research import connect2db
 
