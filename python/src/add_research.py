@@ -104,6 +104,7 @@ def main():
         push_qrs(connection, new_research)
         new_research.write_codes()
         new_research.write_pictures()
+        print(f"Research {research_type} with {n_samples} samples has been added!", file=sys.stderr)
 
     finally:
         connection.commit()
@@ -114,6 +115,5 @@ def main():
 if __name__ == "__main__":
     try:
         main()
-        print(f"Research {research_type} with {n_samples} samples has been added!", file=sys.stderr)
     except OSError as e:
         print(e)
