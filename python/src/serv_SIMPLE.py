@@ -3,68 +3,70 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from datetime import datetime, date
 import time
 import re
+import traceback
+
+from pathlib import Path
 
 
 ######### DB
-from db_settings import DB
+from db_settings import DB, DB_from_docker
 from sys import stderr
 from sys import argv
 import psycopg2
 
-from add_research import connect2db
+from Logger import Logger
+from db_connection import connect2db, running_in_docker
 
 
-class Logger:
-    def __init__(self, log_file):
-        self.log_file = log_file
+def is_docker():
+    cgroup = Path('/proc/self/cgroup')
+    return Path('/.dockerenv').is_file() or cgroup.is_file() and 'docker' in cgroup.read_text()
 
-    def log(self, msg, is_request=False) -> None:
-        with open(self.log_file, "a") as f:
-            if is_request:
-                ip = msg.client_address[0]
-                path = msg.path[5:]
-                print(datetime.now(), ip, path, file=f, sep=' ')
-            else:
-                print(msg, file=f)
-
-
+db_logdata = DB_from_docker if is_docker() else DB
+print(db_logdata)
 
 def in_db(qr) -> bool:
-    connection, base = connect2db(DB)
-    base.execute(f"SELECT qrtest FROM sampl WHERE qrtest='{qr}'")
+    connection, base = connect2db(db_logdata)
+    base.execute(f"SELECT qr_text FROM generated_qrs WHERE qr_text='{qr}'")
     x = base.fetchone()
     return x != None
 
 
 def is_used(qr) -> bool:
-    connection, base = connect2db(DB)
-    base.execute(f"SELECT id_samp FROM sampl WHERE qrtest='{qr}'") # FINDS sample ID from QRcode
-    id_sample = int(base.fetchone()[0])
-    base.execute(f"SELECT id_sample FROM data WHERE id_sample={id_sample}")
+    connection, base = connect2db(db_logdata)
+    base.execute(f"SELECT qr_id FROM generated_qrs WHERE qr_text='{qr}'") # FINDS QR ID for given QR string
+    qr_id = int(base.fetchone()[0])
+
+    base.execute(f"SELECT qr_id FROM collected_samples WHERE qr_id={qr_id}")
     x = base.fetchone()
     return x != None
 
 
 def is_expired(qr) -> bool:
-    connection, base = connect2db(DB)
-    base.execute(f"SELECT id_res FROM sampl WHERE qrtest='{qr}'") # FINDS sample ID from QRcode
-    id_res = int(base.fetchone()[0])
-    base.execute(f"SELECT data_start, data_end FROM reseach WHERE id_res={id_res}")
+    connection, base = connect2db(db_logdata)
+    base.execute(f"SELECT research_id FROM generated_qrs WHERE qr_text='{qr}'") # FINDS sample ID from QRcode
+    research_id = int(base.fetchone()[0])
+    base.execute(f"SELECT day_start, day_end FROM reseaches WHERE research_id={research_id}")
     date_end = base.fetchone()[1]
     return date_end < date.today()
 
 
-def pushInfo(logdata, qr, content) -> None:
+def push_request(request) -> None:
+    qr = request[0:16]
+    req_body = request[17:].split('&')
+    temperature = round(float(req_body[0]))
+    location = req_body[1]
+
     try:
-        connection, base = connect2db(logdata)
-        base.execute(f"SELECT id_samp FROM sampl WHERE qrtest='{qr}'")
-        id_sample = int(base.fetchone()[0])
+        connection, base = connect2db(db_logdata)
+        base.execute(f"SELECT qr_id FROM generated_qrs WHERE qr_text='{qr}'")
+        qr_id = int(base.fetchone()[0])
 
         base.execute("""
-                INSERT INTO data (id_sample, date, time, temperature, gps)
+                INSERT INTO collected_samples (qr_id, date, time, temperature, gps)
                 VALUES (%s, %s, %s, %s, POINT(%s));
                 """,
-                (id_sample, date.today(), datetime.now(), int(float(content[0])), content[1])
+                (qr_id, date.today(), datetime.now(), temperature, location)
             )
     finally:
         connection.commit()
@@ -73,60 +75,105 @@ def pushInfo(logdata, qr, content) -> None:
 
 
 class MyServer(BaseHTTPRequestHandler):
-    def _validate_request(self) -> bool:
+    def _decide_request(self):
+        if self._fully_valid():
+            return "full"
+        if self._qr_only():
+            return "qr"
+        elif self._partially_valid():
+            return "part"
+        elif self.path.startswith("/req/"):
+            return "onlyheader"
+        else:
+            return "rubbish"
+
+
+    def _fully_valid(self) -> bool:
         #           const     qr code     temp=int/float
         # Matching: /req/abc...16 chars...xyz/-15.0&30.1234000,60.1234000
-        pattern = r'^/(req)/([a-z]{16})/(-?\d+(\.\d+)?)&((-?\d+.\d+),(-?\d+.\d+)$)'
+        pattern = r'^/(req)/([a-z]{16})/(-?\d+(\.\d+)?)&((-?\d+.\d+),(-?\d+.\d+))$'
+        return re.match(pattern, self.path)
+
+    def _qr_only(self) -> bool:
+        pattern = r'^/(req)/([a-z]{16})/$' # [...]
+        return re.match(pattern, self.path)
+
+    def _partially_valid(self) -> bool:
+        pattern = r'^/(req)/([a-z]{16})/' # [...)
         return re.match(pattern, self.path)
 
 
+
     def _decide_qr(self, qr) -> bool:
+        logger = Logger("logs.log")
         try:
             if not in_db(qr):
                 self.send_response(422) # Unprocessable Content (no such qr code)
+                logger.log(self, "QR_not_in_DB")
                 print("\nIncorrect QR!\n", file=stderr)
                 return False
             elif is_expired(qr):
                 self.send_response(406) # Not Acceptable (qrcode is expired)
+                logger.log(self, "expired_research")
                 print("\nResearch expired!\n", file=stderr)
                 return False
             elif is_used(qr):
                 self.send_response(410) # Gone (qrcode is used)
+                logger.log(self, "used_qr")
                 print("\nQR is second-hand!\n", file=stderr)
                 return False
             else:
-                self.send_response(200) # ALL GOOD
                 return True
-        except:
-            self.send_response(500) # Internal Server Error (mb smthing is wrong with DB)
+
+        except Exception as e:
             print("\nInternal Server Error! Check database status or whatever...\n", file=stderr)
+            logger.log(self, "server_error")
+            traceback.print_exc(file=stderr)
+            self.send_response(500) # Internal Server Error (mb smthing is wrong with DB)
             return False
 
 
     def do_GET(self):
         logger = Logger("logs.log")
+        request_type = self._decide_request()
 
-        if self._validate_request():
-            logger.log(self, True)
-            request = self.path[5:]
-            qr = request[0:16]
+        match request_type:
+            case "full":
+                request = self.path[5:]
+                qr = request[0:16]
 
-            if self._decide_qr(qr):
-                if len(request) > len(qr)+1:
-                    info = request[17:].split('&')
-                    if len(info) != 2:
-                        print("\nWrong data after correct qr_code!\n", file=stderr)
+                if self._decide_qr(qr):
+                    push_request(request)
+                    self.send_response(200) # SAMPLE ACCEPTED
+                    logger.log(self, "new_sample")
+                    print("\nNew bio sample in collected_samples base!\n", file=stderr)
 
-                    pushInfo(DB, qr, info)
-                    print("\nNew bio sample in data base!\n", file=stderr)
-                    self.end_headers()
-                else:
-                    print("\nGood code, ready to get metadata!\n", file=stderr)
-                    self.end_headers()
-            else:
-                self.end_headers()
+            case "qr":
+                request = self.path[5:]
+                qr = request[0:16]
+                if self._decide_qr(qr):
+                    self.send_response(202) # ACCEPTED
+                    print("\nUnused QR code!\n", file=stderr)
+                    logger.log(self, "valid_QR")
 
-        else:
-            self.send_response(400) # BAD REQUEST
-            self.end_headers()
-            print("\nBad request!\n", file=stderr)
+            case "part":
+                request = self.path[5:]
+                qr = request[0:16]
+                if self._decide_qr(qr):
+                    self.send_response(206) # PARTIAL CONTENT
+                    print("\nUnused QR code with incomplete request!\n", file=stderr)
+                    logger.log(self, "valid_QR_incomplete_request")
+
+            case "onlyheader":
+                logger.log(self, "only_header")
+                self.send_response(415) # Unsupported Media Type
+                print("\nNonsence after correct header!\n", file=stderr)
+
+            case "rubbish":
+                self.send_response(412) # Precondition Failed
+                print("\nWrong request header!\n", file=stderr)
+
+            case _:
+                pass
+
+        self.end_headers()

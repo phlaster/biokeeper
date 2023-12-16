@@ -6,10 +6,10 @@ import os
 from sys import stderr
 
 class Research:
-    def __init__(self, research_id, date_start, date_end, research_type, n_samples, offset):
+    def __init__(self, research_id, day_start, day_end, research_type, n_samples, offset):
         self.research_id = research_id
-        self.date_start = date_start
-        self.date_end = date_end
+        self.day_start = day_start
+        self.day_end = day_end
         self.research_type = research_type
         self.n_samples = n_samples
         self.offset = offset
@@ -77,8 +77,8 @@ if __name__ == "__main__":
     print("Generating sample research files...")
     new_research = Research(
         research_id=0,
-        date_start=1,
-        date_end=2,
+        day_start=1,
+        day_end=2,
         research_type=3,
         n_samples=4,
         offset=5
