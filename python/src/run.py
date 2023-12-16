@@ -6,15 +6,15 @@ serverPort = 8080
 
 if __name__ == "__main__":
     webServer = HTTPServer((hostName, serverPort), MyServer)
-    log_message(f"{datetime.now()} server started at port {serverPort}")
+    logger = Logger("logs.log")
 
     try:
+        logger.log(f"{datetime.now()} server started at port {serverPort}")
         webServer.serve_forever()
     except KeyboardInterrupt:
         pass
-    except e:
+    except Exception as e:
         print(e)
-
     finally:
+        logger.log(f"{datetime.now()} server stopped")
         webServer.server_close()
-        log_message(f"{datetime.now()} server stopped")

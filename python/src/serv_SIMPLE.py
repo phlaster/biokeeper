@@ -14,24 +14,25 @@ import psycopg2
 from add_research import connect2db
 from db_settings import db
 
+class Logger:
+    def __init__(self, log_file):
+        self.log_file = log_file
+
+    def log(self, msg, is_request=False) -> None:
+        with open(self.log_file, "a") as f:
+            if is_request:
+                ip = msg.client_address[0]
+                path = msg.path[5:]
+                print(datetime.now(), ip, path, file=f, sep=' ')
+            else:
+                print(msg, file=f)
+
 
 def validate_request(path) -> bool:
     #           const     qr code     temp=int/float
     # Matching: /req/abc...16 chars...xyz/-15.0&30.1234000,60.1234000
     pattern = r'^/(req)/([a-z]{16})/(-?\d+(\.\d+)?)&((-?\d+.\d+),(-?\d+.\d+)$)'
     return re.match(pattern, path)
-
-
-def log_message(msg) -> None:
-    with open("./logs.log", "a") as log:
-        print(msg, file=log)
-
-
-def log_correct_request(request) -> None:
-    with open("./logs.log", "a") as log:
-        ip = request.client_address[0]
-        request = request.path[5:]
-        print(datetime.now(), ip, request, file=log, sep=' ')
 
 
 def in_db(qr) -> bool:
@@ -101,9 +102,12 @@ def pushInfo(logdata, qr, content) -> None:
 
 
 class MyServer(BaseHTTPRequestHandler):
+
     def do_GET(self):
+        logger = Logger("logs.log")
+
         if validate_request(self.path):
-            log_correct_request(self)
+            logger.log(self, True)
             request = self.path[5:]
             qr = request[0:16]
 
