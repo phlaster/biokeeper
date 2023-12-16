@@ -16,10 +16,9 @@ from db_settings import db
 
 
 def validate_request(path) -> bool:
-    # pattern = r'^/req/\d{8}/'
-
-    # Matching: /req/12345678/15.0&30.00000,60.000000
-    pattern = r'^/req/\d{8}/(-?\d+(\.\d+)?)&(-?\d+.\d+),(-?\d+.\d+)$'
+    #           const     qr code     temp=int/float
+    # Matching: /req/abc...16 chars...xyz/-15.0&30.1234000,60.1234000
+    pattern = r'^/(req)/([a-z]{16})/(-?\d+(\.\d+)?)&((-?\d+.\d+),(-?\d+.\d+)$)'
     return re.match(pattern, path)
 
 
@@ -103,12 +102,6 @@ def pushInfo(logdata, qr, content) -> None:
 
 class MyServer(BaseHTTPRequestHandler):
     def do_GET(self):
-        """ in Java:
-            String temp_c = String.valueOf(data.getDouble("temp_c"));
-            String geopos =  location.getLatitude() +"," + location.getLongitude();
-            String result_for_server = temp_c+"&"+geopos;
-            "http://X.X.X.X:8080/req/"+qr_code_8_symbols+"/"+result_for_server
-        """
         if validate_request(self.path):
             log_correct_request(self)
             request = self.path[5:]
