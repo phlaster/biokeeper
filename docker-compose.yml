@@ -7,6 +7,9 @@ services:
     restart: always
     ports:
       - 1337:8080
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
 
 
   db_postgres:
@@ -19,4 +22,6 @@ services:
     image: postgres:13.13-bullseye
     volumes:
       - ./postgres/dump.sql:/docker-entrypoint-initdb.d/dump.sql
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
     command: ["postgres", "-c", "log_statement=all"]
