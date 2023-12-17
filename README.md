@@ -84,6 +84,5 @@ There're 2 types of valid request paths:
 Other response codes:
 * `206` -- Unused QR code, followed by incorrect or incomplete request;
 * `415` -- Request path starts with `/req/`, but the rest is incomprehensible;
-* `410` -- The code has allready being used;
 * `412` -- Totally incomprehensible request;
 * `500` -- Internal Server Error (thrown if any database operation failed).
