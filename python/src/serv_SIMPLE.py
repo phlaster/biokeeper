@@ -46,7 +46,7 @@ def is_expired(qr) -> bool:
     connection, base = connect2db(db_logdata)
     base.execute(f"SELECT research_id FROM generated_qrs WHERE qr_text='{qr}'") # FINDS sample ID from QRcode
     research_id = int(base.fetchone()[0])
-    base.execute(f"SELECT day_start, day_end FROM reseaches WHERE research_id={research_id}")
+    base.execute(f"SELECT day_start, day_end FROM researches WHERE research_id={research_id}")
     date_end = base.fetchone()[1]
     return date_end < date.today()
 

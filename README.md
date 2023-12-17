@@ -34,6 +34,7 @@ where cl args are (in order):
 * how many QR codes to create;
 * first day of research;
 * last day of research.
+
 This will populate the db with research files, increment global counters etc. This will also generate directory with QR pictures and `.csv` file with text representation of QR codes.
 
 ## Regenerating research files

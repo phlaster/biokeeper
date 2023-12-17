@@ -16,7 +16,7 @@ def date_to_str(d) -> str:
 def extract_research_params(connection, id) -> tuple:
     try:
         base = connection.cursor()
-        base.execute(f"SELECT * FROM reseaches WHERE research_id={id}")
+        base.execute(f"SELECT * FROM researches WHERE research_id={id}")
         extracted = base.fetchone()
 
         assert extracted != None, f"No research with id {id} was found!"

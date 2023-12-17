@@ -84,7 +84,7 @@ def main():
         )
 
         dbase.execute("""
-            INSERT INTO reseaches (research_id, research_type, num_samp, day_start, day_end)
+            INSERT INTO researches (research_id, research_type, num_samp, day_start, day_end)
             VALUES (%s, %s, %s, %s, %s);
             """,
             (new_research.research_id, new_research.research_type, new_research.n_samples, new_research.day_start, new_research.day_end)
