@@ -55,13 +55,13 @@ There're 2 types of valid request paths:
     ```
     Where:
 
-    * `qrcode`: 16 a-z lowercase chars (no `$` sign!)
+    * `qrcode`: 16 a-z lowercase chars.
 
     Possible response codes:
-    * `202` -- Code is in database and is ready to use
-    * `406` -- Code has not being used, but the research is ended (alas!)
-    * `410` -- The code has allready being used
-    * `422` -- No such code in database
+    * `202` -- Code is in database and is ready to use;
+    * `406` -- Code has not being used, but the research is ended (alas!);
+    * `410` -- The code has allready being used;
+    * `422` -- No such code in database.
 
 2. Long type -- attempt to push new sample into db:
     >
@@ -71,19 +71,19 @@ There're 2 types of valid request paths:
     ```
     Where:
 
-    * `qrcode`: 16 a-z lowercase chars (no `$` sign!);
+    * `qrcode`: 16 a-z lowercase chars;
     * `temperature`: integer value;
-    * `latitude` and `longitude`: both floats separated with comma (`,`)
+    * `latitude` and `longitude`: both floats separated with comma (`,`).
 
     Possible response codes:
-    * `200` -- The QR-code was valid, the sample has being pushed, the code has became `used`
-    * `406` -- Code has not being used, but the research is ended
-    * `410` -- The code has allready being used
-    * `422` -- No such code in database
+    * `200` -- The QR-code was valid, the sample has being pushed, the code has became `used`;
+    * `406` -- Code has not being used, but the research is ended;
+    * `410` -- The code has allready being used;
+    * `422` -- No such code in database.
 
 Other response codes:
-* `206` -- Unused QR code, followed by incorrect or incomplete request
-* `415` -- Request path starts with `/req/`, but the rest is incomprehensible
-* `410` -- The code has allready being used
-* `412` -- Totally incomprehensible request
-* `500` -- Internal Server Error (thrown if any database operation failed)
+* `206` -- Unused QR code, followed by incorrect or incomplete request;
+* `415` -- Request path starts with `/req/`, but the rest is incomprehensible;
+* `410` -- The code has allready being used;
+* `412` -- Totally incomprehensible request;
+* `500` -- Internal Server Error (thrown if any database operation failed).
