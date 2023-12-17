@@ -22,9 +22,9 @@ def extract_research_params(connection, id) -> tuple:
         assert extracted != None, f"No research with id {id} was found!"
 
         research_id = int(extracted[0])
-        date_start = date_to_str(extracted[3])
-        date_end = date_to_str(extracted[4])
-        research_type = extracted[1]
+        day_start = date_to_str(extracted[3])
+        day_end = date_to_str(extracted[4])
+        research_type = int(extracted[1])
         n_samples = int(extracted[2])
 
         base.execute("SELECT COUNT(*) FROM generated_qrs WHERE research_id < %s", (id,))
@@ -32,8 +32,8 @@ def extract_research_params(connection, id) -> tuple:
 
         params = (
             research_id,
-            date_start,
-            date_end,
+            day_start,
+            day_end,
             research_type,
             n_samples,
             qr_offset

@@ -21,7 +21,7 @@ class Research:
 
 
     def _public_fields_digest(self) -> str:
-        fields = [str(v) for k, v in self.__dict__.items() if not k.startswith("_")]
+        fields = [str(x) for x in [self.research_id]]
         return "".join(fields)
 
 

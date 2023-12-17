@@ -60,7 +60,7 @@ def push_qrs(connection, research) -> None:
 
 
 def main():
-    research_type = sys.argv[1]
+    research_type = int(sys.argv[1])
     n_samples = int(sys.argv[2])
     day_start = sys.argv[3]
     day_end = sys.argv[4]
@@ -94,7 +94,7 @@ def main():
         push_qrs(connection, new_research)
         new_research.write_codes()
         new_research.write_pictures()
-        print(f"Research {research_type} with {n_samples} samples has been added!", file=sys.stderr)
+        print(f"Research #{research_id} of type {research_type} with {n_samples} samples has been added!", file=sys.stderr)
 
     finally:
         connection.commit()
