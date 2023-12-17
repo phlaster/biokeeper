@@ -10,6 +10,8 @@ class Research:
         self.research_id = research_id
         self.day_start = day_start
         self.day_end = day_end
+        assert day_start <= day_end, "Your research starts later than it ends"
+
         self.research_type = research_type
         self.n_samples = n_samples
         self.offset = offset
