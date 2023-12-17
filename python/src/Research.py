@@ -23,7 +23,7 @@ class Research:
 
 
     def _public_fields_digest(self) -> str:
-        fields = [str(x) for x in [self.research_id]]
+        fields = [str(x) for x in [self.research_id, self.day_start, self.day_end, self.research_type, self.n_samples]]
         return "".join(fields)
 
 
