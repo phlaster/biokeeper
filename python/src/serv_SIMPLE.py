@@ -15,62 +15,73 @@ from sys import argv
 import psycopg2
 
 from Logger import Logger
-from db_connection import connect2db, running_in_docker
+from db_connection import connect2db
 
 
 def is_docker():
     cgroup = Path('/proc/self/cgroup')
     return Path('/.dockerenv').is_file() or cgroup.is_file() and 'docker' in cgroup.read_text()
 
-db_logdata = DB_from_docker if is_docker() else DB
-print(db_logdata)
+DB_LOGDATA = DB_from_docker if is_docker() else DB
 
-def in_db(qr) -> bool:
-    connection, base = connect2db(db_logdata)
-    base.execute(f"SELECT qr_text FROM generated_qrs WHERE qr_text='{qr}'")
-    x = base.fetchone()
-    return x != None
-
-
-def is_used(qr) -> bool:
-    connection, base = connect2db(db_logdata)
-    base.execute(f"SELECT qr_id FROM generated_qrs WHERE qr_text='{qr}'") # FINDS QR ID for given QR string
-    qr_id = int(base.fetchone()[0])
-
-    base.execute(f"SELECT qr_id FROM collected_samples WHERE qr_id={qr_id}")
-    x = base.fetchone()
-    return x != None
+def in_db(db_logdata, qr) -> bool:
+    try:
+        connection, cursor = connect2db(db_logdata)
+        cursor.execute(f"SELECT qr_text FROM generated_qrs WHERE qr_text='{qr}'")
+        x = cursor.fetchone()
+        return x != None
+    finally:
+        cursor.close()
+        connection.close()
 
 
-def is_expired(qr) -> bool:
-    connection, base = connect2db(db_logdata)
-    base.execute(f"SELECT research_id FROM generated_qrs WHERE qr_text='{qr}'") # FINDS sample ID from QRcode
-    research_id = int(base.fetchone()[0])
-    base.execute(f"SELECT day_start, day_end FROM researches WHERE research_id={research_id}")
-    date_end = base.fetchone()[1]
-    return date_end < date.today()
+def is_used(db_logdata, qr) -> bool:
+    try:
+        connection, cursor = connect2db(db_logdata)
+        cursor.execute(f"SELECT qr_id FROM generated_qrs WHERE qr_text='{qr}'") # FINDS QR ID for given QR string
+        qr_id = int(cursor.fetchone()[0])
+
+        cursor.execute(f"SELECT qr_id FROM collected_samples WHERE qr_id={qr_id}")
+        x = cursor.fetchone()
+        return x != None
+    finally:
+        cursor.close()
+        connection.close()
 
 
-def push_request(request) -> None:
+def is_expired(db_logdata, qr) -> bool:
+    try:
+        connection, cursor = connect2db(db_logdata)
+        cursor.execute(f"SELECT research_id FROM generated_qrs WHERE qr_text='{qr}'") # FINDS sample ID from QRcode
+        research_id = int(cursor.fetchone()[0])
+        cursor.execute(f"SELECT day_start, day_end FROM researches WHERE research_id={research_id}")
+        date_end = cursor.fetchone()[1]
+        return date_end < date.today()
+    finally:
+        cursor.close()
+        connection.close()
+
+
+def push_request(db_logdata, request) -> None:
     qr = request[0:16]
     req_body = request[17:].split('&')
     temperature = round(float(req_body[0]))
     location = req_body[1]
 
     try:
-        connection, base = connect2db(db_logdata)
-        base.execute(f"SELECT qr_id FROM generated_qrs WHERE qr_text='{qr}'")
-        qr_id = int(base.fetchone()[0])
+        connection, cursor = connect2db(db_logdata)
+        cursor.execute(f"SELECT qr_id FROM generated_qrs WHERE qr_text='{qr}'")
+        qr_id = int(cursor.fetchone()[0])
 
-        base.execute("""
-                INSERT INTO collected_samples (qr_id, date, time, temperature, gps)
-                VALUES (%s, %s, %s, %s, POINT(%s));
-                """,
-                (qr_id, date.today(), datetime.now(), temperature, location)
-            )
-    finally:
+        cursor.execute("""
+            INSERT INTO collected_samples (qr_id, date, time, temperature, gps)
+            VALUES (%s, %s, %s, %s, POINT(%s));
+            """,
+            (qr_id, date.today(), datetime.now(), temperature, location)
+        )
         connection.commit()
-        base.close()
+    finally:
+        cursor.close()
         connection.close()
 
 
@@ -91,7 +102,7 @@ class MyServer(BaseHTTPRequestHandler):
     def _fully_valid(self) -> bool:
         #           const     qr code     temp=int/float
         # Matching: /req/abc...16 chars...xyz/-15.0&30.1234000,60.1234000
-        pattern = r'^/(req)/([a-z]{16})/(-?\d+(\.\d+)?)&((-?\d+.\d+),(-?\d+.\d+))$'
+        pattern = r'^/(req)/([a-z]{16})/(-?\d+(\.\d+)?)&((-?\d+.\d+),(-?\d+.\d+))/$'
         return re.match(pattern, self.path)
 
     def _qr_only(self) -> bool:
@@ -107,17 +118,17 @@ class MyServer(BaseHTTPRequestHandler):
     def _decide_qr(self, qr) -> bool:
         logger = Logger("logs.log")
         try:
-            if not in_db(qr):
+            if not in_db(DB_LOGDATA, qr):
                 self.send_response(422) # Unprocessable Content (no such qr code)
                 logger.log(self, "QR_not_in_DB")
                 print("\nIncorrect QR!\n", file=stderr)
                 return False
-            elif is_expired(qr):
+            elif is_expired(DB_LOGDATA, qr):
                 self.send_response(406) # Not Acceptable (qrcode is expired)
                 logger.log(self, "expired_research")
                 print("\nResearch expired!\n", file=stderr)
                 return False
-            elif is_used(qr):
+            elif is_used(DB_LOGDATA, qr):
                 self.send_response(410) # Gone (qrcode is used)
                 logger.log(self, "used_qr")
                 print("\nQR is second-hand!\n", file=stderr)
@@ -143,7 +154,7 @@ class MyServer(BaseHTTPRequestHandler):
                 qr = request[0:16]
 
                 if self._decide_qr(qr):
-                    push_request(request)
+                    push_request(DB_LOGDATA, request)
                     self.send_response(200) # SAMPLE ACCEPTED
                     logger.log(self, "new_sample")
                     print("\nNew bio sample in collected_samples base!\n", file=stderr)
