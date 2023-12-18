@@ -11,12 +11,22 @@ To raise the whole back-end run:
 $ docker-compose build
 $ docker-compose up
 ```
-This will create blank database (port `5432`) and start the python server, listening on port `1337`. Mind your firewall!
+This will create blank database (no exposed ports) and start the python server, listening on port `1337`. Mind your firewall!
 
 To stop the back-end run:
 ```bash
 $ docker-compose down
 ```
+
+## Connecting to database
+### From the same machine:
+Connect to database using `5432` port with the ip from the command below:
+```
+$ docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' db_postgres
+```
+> __Note!__ This ip may change with every `docker-compose up`
+### From remote machine
+To prevent direct external connections Postgres container exposes no ports. Use the ip from the command above to connect via SSH.
 
 ## Creating new research
 To create research. while back-end is running, firstly activate the python virtual environment:
