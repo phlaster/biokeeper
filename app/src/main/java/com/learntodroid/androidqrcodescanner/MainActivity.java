@@ -36,7 +36,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     @Override
                     public void onClick(View v) {
                         Intent intent=new Intent(MainActivity.this,SecondPage.class);
-                        intent.putExtra("qr","1");
+                        intent.putExtra("qr","1234567891234567");
                         startActivity(intent);
 
 

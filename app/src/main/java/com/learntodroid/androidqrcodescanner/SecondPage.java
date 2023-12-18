@@ -70,6 +70,8 @@ public class SecondPage extends AppCompatActivity {
                                 @Override
                                 public void onResponse(String response) {                // Display the first 500 characters of the response string.
                                     Checkqr.setText("Response is: " + response);
+
+
                                 }
                             }, new Response.ErrorListener() {
                                 @Override
@@ -105,6 +107,7 @@ public class SecondPage extends AppCompatActivity {
                         public void onResponse(JSONObject response)
                         {
                             GetData(response,Whether,geopos,SendInfo,Checkqr,requestQueue,qr_code);
+
                         }
                     },
                     new Response.ErrorListener() {
@@ -165,16 +168,14 @@ public class SecondPage extends AppCompatActivity {
 
         RequestQueue requestQueue = Volley.newRequestQueue(this);
         final int[] Check_qr_status = new int[1];
-        //String send_qr = "http://62.109.17.249:1337/req/"+qr_code;
-        String send_qr = "https://api.weatherapi.com/v1/current.json?q=60,60&key=d98e7c7729f14db6bae180859231312";
+        String send_qr = "http://62.109.17.249:1337/req/"+qr_code+"/";
         NetworkResponseRequest request = new NetworkResponseRequest(Request.Method.GET, send_qr,
                 new Response.Listener<NetworkResponse>() {
                     @Override
                     public void onResponse(NetworkResponse response) {
                         Check_qr_status[0] =response.statusCode;
                         //Checkqr.setText(String.valueOf(response.statusCode));
-                        //if(Check_qr_status[0]==200){
-                        if(true){
+                        if(Check_qr_status[0]==202){
                             Checkqr.setText("Хороший код!:)");
                             if (ActivityCompat.checkSelfPermission(SecondPage.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                                 ActivityCompat.requestPermissions(SecondPage.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, 1);
@@ -201,6 +202,12 @@ public class SecondPage extends AppCompatActivity {
                         else if(Check_qr_status[0]==406){
                             Checkqr.setText("исследование закончилось");
 
+                        }
+                        else if(Check_qr_status[0]==500){
+                            Checkqr.setText("ошибка сервака");
+                        }
+                        else if(Check_qr_status[0]==666){
+                            Checkqr.setText("Обновите приложение");
                         }
                         else{
                             Checkqr.setText(String.valueOf(Check_qr_status[0]));
