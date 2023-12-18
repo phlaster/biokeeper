@@ -5,22 +5,15 @@ import time
 import re
 import traceback
 
-from pathlib import Path
-
 
 ######### DB
-from db_settings import DB, DB_from_docker
+from db_connection import DB, DB_from_docker, is_docker, connect2db
 from sys import stderr
 from sys import argv
 import psycopg2
 
 from Logger import Logger
-from db_connection import connect2db
 
-
-def is_docker():
-    cgroup = Path('/proc/self/cgroup')
-    return Path('/.dockerenv').is_file() or cgroup.is_file() and 'docker' in cgroup.read_text()
 
 DB_LOGDATA = DB_from_docker if is_docker() else DB
 

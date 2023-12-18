@@ -11,8 +11,7 @@ import sys
 from datetime import date
 
 from Research import Research
-from db_settings import DB
-from db_connection import connect2db
+from db_connection import connect2db, DB
 
 
 def str_to_date(s):

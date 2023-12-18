@@ -4,9 +4,8 @@ C.l. args:
 """
 
 from Research import Research
-from db_settings import DB
 import sys
-from db_connection import connect2db
+from db_connection import connect2db, DB
 
 
 def date_to_str(d) -> str:
