@@ -66,7 +66,7 @@ public class SecondPage extends AppCompatActivity {
                         @Override
                         public void onClick(View v) {
 
-                            StringRequest Request_for_server = new StringRequest(Request.Method.GET, "http://62.109.17.249:1337/req/" + qr_code + "/" + result_for_server, new Response.Listener<String>() {
+                            StringRequest Request_for_server = new StringRequest(Request.Method.GET, "http://62.109.17.249:1337/req/" + qr_code + "/" + result_for_server+"/", new Response.Listener<String>() {
                                 @Override
                                 public void onResponse(String response) {                // Display the first 500 characters of the response string.
                                     Checkqr.setText("Response is: " + response);
