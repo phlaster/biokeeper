@@ -9,3 +9,4 @@ serv_env/
 **/research*/**
 
 .vscode
+.cache.sqlite
