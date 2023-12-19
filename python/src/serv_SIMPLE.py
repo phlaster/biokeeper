@@ -59,7 +59,7 @@ def push_request(db_logdata, request) -> None:
     qr = request[0:16]
     req_body = request[17:].split('&')
     temperature = round(float(req_body[0]))
-    location = req_body[1]
+    location = req_body[1].strip('/')
 
     try:
         connection, cursor = connect2db(db_logdata)
