@@ -1,5 +1,5 @@
 import React from "react";
-import qr_screen from  './components/qr_screen';
+import Qr_screen from  './components/Qr_screen';
 import Main from  './components/Main';
 import { createStackNavigator } from "@react-navigation/stack";
 import { NavigationContainer } from "@react-navigation/native";
@@ -15,9 +15,9 @@ export default function Navigate(){
                 options={{title:'Main'}}
                 />
             <Stack.Screen
-                name="qr_screen"
-                component={qr_screen}
-                options={{title:'qr_screen'}}
+                name="Qr_screen"
+                component={Qr_screen}
+                options={{title:'Qr_screen'}}
                 />
         
         </Stack.Navigator>
