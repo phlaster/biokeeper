@@ -4,7 +4,10 @@ import { Camera, CameraView } from "expo-camera/next";
 import { router } from "expo-router";
 import * as Linking from "expo-linking";
 
-const QRScanner: React.FC = () => {
+
+
+function QRScanner({ navigation }) {
+
   const [hasCameraPermission, setCameraPermission] = useState<boolean | null>(
     null
   );
@@ -49,23 +52,28 @@ const QRScanner: React.FC = () => {
   const handleBarCodeScanned = async ({ data }) => {
     Vibration.vibrate();
     console.log("data", data);
+    navigation.navigate('Bio_info', { data: data });
   };
 
   const goToSettings = () => {
     Linking.openSettings();
   };
 
+  
+  
+
   if (hasCameraPermission && hasAudioPermission) {
+
+
     return (
       <CameraView
         onBarcodeScanned={handleBarCodeScanned}
         barcodeScannerSettings={{
           barcodeTypes: ["qr"],
         }}
-        style={{ height: Dimensions.get("window").height }}
-      />
+        style={{ height: Dimensions.get("window").height }} />
     );
   }
-};
+}
 
 export default QRScanner;
