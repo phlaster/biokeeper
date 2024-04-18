@@ -29,3 +29,5 @@ serv_env/
 
 postgres/data/
 >>>>>>> Stashed changes
+
+.env
