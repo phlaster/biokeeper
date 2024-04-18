@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 *.iml
 .gradle
 /local.properties
@@ -12,3 +13,19 @@
 /captures
 .externalNativeBuild
 .cxx
+=======
+__pycache__/
+logs/
+venv/
+serv_env/
+*.log
+
+*.csv
+*.svg
+**/research*/**
+
+.vscode
+.cache.sqlite
+
+postgres/data/
+>>>>>>> Stashed changes
