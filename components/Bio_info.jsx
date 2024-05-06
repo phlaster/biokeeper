@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, Button, Image ,TextInput } from 'react-native';
+import { StyleSheet, Text, Alert, View, Button, Image ,TextInput } from 'react-native';
 import * as Location from 'expo-location';
 
 const getLocationPermission = async () => {
@@ -12,7 +12,7 @@ const getLocationPermission = async () => {
   return true;
 };
 
-export default function Bio_info({ route }) {
+export default function Bio_info({ route, navigation }) {
   const [location, setLocation] = useState(null);
 
   useEffect(() => {
@@ -27,8 +27,13 @@ export default function Bio_info({ route }) {
     getLocation();
   }, []); // Run only once on component mount
 
+  
   const loadscene = () => {
     // Define the functionality for loadscene
+    Alert.alert(
+      "Теперь можно сфотографировать местность"
+    );
+    navigation.navigate('Take_photo');
   };
 
   const { data } = route.params;
