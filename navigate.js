@@ -2,6 +2,7 @@ import React from "react";
 import Qr_screen from  './components/Qr_screen';
 import Main from  './components/Main';
 import Bio_info from  './components/Bio_info';
+import Take_photo from './components/Take_photo';
 import { createStackNavigator } from "@react-navigation/stack";
 import { NavigationContainer } from "@react-navigation/native";
 
@@ -24,6 +25,11 @@ export default function Navigate(){
                 name="Bio_info"
                 component={Bio_info}
                 options={{title:'Bio_info'}}
+                />
+            <Stack.Screen
+                name="Take_photo"
+                component={Take_photo}
+                options={{title:'Take_photo'}}
                 />
         
         </Stack.Navigator>
