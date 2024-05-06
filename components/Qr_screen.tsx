@@ -51,7 +51,6 @@ function QRScanner({ navigation }) {
 
   const handleBarCodeScanned = async ({ data }) => {
     Vibration.vibrate();
-    console.log("data", data);
     navigation.navigate('Bio_info', { data: data });
   };
 
