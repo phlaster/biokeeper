@@ -7,10 +7,8 @@ import traceback
 
 
 ######### DB
-from db_connection import DB, DB_from_docker, is_docker, connect2db
+from db_connection import *
 from sys import stderr
-from sys import argv
-import psycopg2
 
 from Logger import Logger
 
