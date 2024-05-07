@@ -10,12 +10,12 @@ if __name__ == "__main__":
     logger = Logger("logs.log")
 
     try:
-        logger.log_message(f"{datetime.now()} server_started_at_port_{serverPort}")
+        logger.log_message(f"server_started_at_port {serverPort}")
         webServer.serve_forever()
     except KeyboardInterrupt:
         pass
     except Exception as e:
         print(e)
     finally:
-        logger.log_message(f"{datetime.now()} server_stopped")
+        logger.log_message(f"server_stopped_at_port {serverPort}")
         webServer.server_close()

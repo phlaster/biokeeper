@@ -6,7 +6,7 @@ class Logger:
 
     def log_message(self, msg) -> None:
         with open(self.log_file, "a") as f:
-            print(msg, file=f)
+            print(datetime.now(), msg, file=f)
 
     def log(self, request, comment) -> None:
         with open(self.log_file, "a") as f:
