@@ -49,53 +49,36 @@ DB_from_docker = {
 }
 
 def in_db(db_logdata, qr) -> bool:
-    try:
-        connection, cursor = connect2db(db_logdata)
+    with connect2db(db_logdata) as (connection, cursor):
         cursor.execute(f"SELECT qr_text FROM generated_qrs WHERE qr_text='{qr}'")
-        x = cursor.fetchone()
-        return x != None
-    finally:
-        cursor.close()
-        connection.close()
+        return cursor.fetchone() is not None
 
 
 def is_used(db_logdata, qr) -> bool:
-    try:
-        connection, cursor = connect2db(db_logdata)
-        cursor.execute(f"SELECT qr_id FROM generated_qrs WHERE qr_text='{qr}'") # FINDS QR ID for given QR string
-        qr_id = int(cursor.fetchone()[0])
-
+    with connect2db(db_logdata) as (connection, cursor):
+        cursor.execute(f"SELECT qr_id FROM generated_qrs WHERE qr_text='{qr}'")
+        qr_id = cursor.fetchone()[0]
         cursor.execute(f"SELECT qr_id FROM collected_samples WHERE qr_id={qr_id}")
-        x = cursor.fetchone()
-        return x != None
-    finally:
-        cursor.close()
-        connection.close()
+        return cursor.fetchone() is not None
 
 
 def is_expired(db_logdata, qr) -> bool:
-    try:
-        connection, cursor = connect2db(db_logdata)
-        cursor.execute(f"SELECT research_id FROM generated_qrs WHERE qr_text='{qr}'") # FINDS sample ID from QRcode
-        research_id = int(cursor.fetchone()[0])
-        cursor.execute(f"SELECT day_start, day_end FROM researches WHERE research_id={research_id}")
-        date_end = cursor.fetchone()[1]
+    with connect2db(db_logdata) as (connection, cursor):
+        cursor.execute(f"SELECT research_id FROM generated_qrs WHERE qr_text='{qr}'")
+        research_id = cursor.fetchone()[0]
+        cursor.execute(f"SELECT day_end FROM researches WHERE research_id={research_id}")
+        date_end = cursor.fetchone()[0]
         return date_end < date.today()
-    finally:
-        cursor.close()
-        connection.close()
 
 
 def push_request(db_logdata, request) -> None:
-    qr = request[0:16]
-    req_body = request[17:].split('&')
+    qr, req_body = request[:16], request[17:].split('&')
     temperature = round(float(req_body[0]))
     location = req_body[1].strip('/')
 
-    try:
-        connection, cursor = connect2db(db_logdata)
+    with connect2db(db_logdata) as (connection, cursor):
         cursor.execute(f"SELECT qr_id FROM generated_qrs WHERE qr_text='{qr}'")
-        qr_id = int(cursor.fetchone()[0])
+        qr_id = cursor.fetchone()[0]
 
         cursor.execute("""
             INSERT INTO collected_samples (qr_id, date, time, temperature, gps)
@@ -104,6 +87,3 @@ def push_request(db_logdata, request) -> None:
             (qr_id, date.today(), datetime.now(), temperature, location)
         )
         connection.commit()
-    finally:
-        cursor.close()
-        connection.close()
