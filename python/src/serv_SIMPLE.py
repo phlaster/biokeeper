@@ -18,32 +18,16 @@ DB_LOGDATA = DB_from_docker if is_docker() else DB
 
 class MyServer(BaseHTTPRequestHandler):
     def _decide_request(self):
-        if self._fully_valid():
-            return "full"
-        if self._qr_only():
-            return "qr"
-        elif self._partially_valid():
-            return "part"
-        elif self.path.startswith("/req/"):
-            return "onlyheader"
-        else:
-            return "rubbish"
-
-
-    def _fully_valid(self) -> bool:
-        #           const     qr code     temp=int/float
-        # Matching: /req/abc...16 chars...xyz/-15.0&30.1234000,60.1234000
-        pattern = r'^/(req)/([a-z]{16})/(-?\d+(\.\d+)?)&((-?\d+.\d+),(-?\d+.\d+))/$'
-        return re.match(pattern, self.path)
-
-    def _qr_only(self) -> bool:
-        pattern = r'^/(req)/([a-z]{16})/$' # [...]
-        return re.match(pattern, self.path)
-
-    def _partially_valid(self) -> bool:
-        pattern = r'^/(req)/([a-z]{16})/' # [...)
-        return re.match(pattern, self.path)
-
+        patterns = [
+            (r'^/(req)/([a-z]{16})/(-?\d+(\.\d+)?)&((-?\d+.\d+),(-?\d+.\d+))/$', "full"),
+            (r'^/(req)/([a-z]{16})/$',                                           "qr"),
+            (r'^/(req)/([a-z]{16})/',                                            "part"),
+            (r'^/req/',                                                          "onlyheader"),
+        ]
+        for pattern, result in patterns:
+            if re.match(pattern, self.path):
+                return result
+        return "rubbish"
 
 
     def _decide_qr(self, qr) -> bool:
