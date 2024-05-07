@@ -27,16 +27,31 @@ export default function Bio_info({ route, navigation }) {
     getLocation();
   }, []); // Run only once on component mount
 
-  
+  const { data } = route.params;
   const loadscene = () => {
     // Define the functionality for loadscene
     Alert.alert(
       "Теперь можно сфотографировать местность"
     );
+
+    var request = new XMLHttpRequest();
+    request.onreadystatechange = (e) => {
+      if (request.readyState !== 4) {
+        return;
+      }
+      if (request.status === 200) {
+        Alert.alert('success' + request.responseText);
+      } else {
+        Alert.alert('error' + request.status);
+      }
+    };
+    
+    request.open('GET', 'http://62.109.17.249:1337/req/' + "{qr:" + data+"");
+    request.send();
+    
     navigation.navigate('Take_photo');
   };
 
-  const { data } = route.params;
   const [inputValue, setInputValue] = useState(''); 
   return (
     <View style={styles.container}>
