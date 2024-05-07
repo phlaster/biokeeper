@@ -1,6 +1,8 @@
 from pathlib import Path
 import subprocess
 
+from colorama import Fore, Style
+
 import psycopg2
 
 def connect2db(logdata):
@@ -24,8 +26,11 @@ if not is_docker():
     command = "docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' db_postgres"
     process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
-    ip, error = process.communicate()
-    assert error == '', "Some error occured while deducing the postgres local ip"
+    ip, e = process.communicate()
+    if e != '':
+        print(Fore.RED + "Some error occured while deducing the postgres local ip:" + Style.RESET_ALL)
+        print(e)
+        print(Fore.BLUE + "Starting server anyway..." + Style.RESET_ALL)
 
 DB = {
     "db_name" : "postgres",
