@@ -19,7 +19,7 @@ services:
     #  - 5432:5432
     environment:
       - POSTGRES_PASSWORD=root
-    image: postgres:13.13-bullseye
+    image: postgres
     volumes:
       - ./postgres/dump.sql:/docker-entrypoint-initdb.d/dump.sql
       - /etc/timezone:/etc/timezone:ro
