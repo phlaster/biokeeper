@@ -5,8 +5,6 @@ import time
 import re
 import traceback
 
-
-######### DB
 from db_connection import *
 from sys import stderr
 
@@ -16,6 +14,7 @@ from colorama import Fore, Style
 
 class MyServer(BaseHTTPRequestHandler):
     def _decide_request(self):
+        # From narrowest to the broadest:
         patterns = [
             (r'^/(req)/([a-z]{16})/(-?\d+(\.\d+)?)&((-?\d+.\d+),(-?\d+.\d+))/$', "full"),
             (r'^/(req)/([a-z]{16})/$',                                           "qr"),
@@ -46,58 +45,44 @@ class MyServer(BaseHTTPRequestHandler):
                 logger.log(self, "used_qr")
                 print(Fore.LIGHTRED_EX + "\nQR is second-hand!\n" + Style.RESET_ALL, file=stderr)
                 return False
-            else:
-                return True
+            return True
 
         except Exception as e:
-            print(Fore.RED + "\nInternal Server Error! Check database status or whatever...\n" + Style.RESET_ALL, file=stderr)
             logger.log(self, "server_error")
+            self.send_response(500) # Internal Server Error (mb smthing is wrong with database)
             traceback.print_exc(file=stderr)
-            self.send_response(500) # Internal Server Error (mb smthing is wrong with DB)
+            print(Fore.RED + "\nInternal Server Error! Check database status or whatever...\n" + Style.RESET_ALL, file=stderr)
             return False
 
 
     def do_GET(self):
         logger = Logger("logs.log")
         request_type = self._decide_request()
+        request = self.path[5:]
+        qr = request[0:16]
 
         match request_type:
             case "full":
-                request = self.path[5:]
-                qr = request[0:16]
-
                 if self._decide_qr(qr):
                     push_request(DB_LOGDATA, request)
                     self.send_response(200) # SAMPLE ACCEPTED
                     logger.log(self, "new_sample")
                     print(Fore.GREEN + "\nNew bio sample in collected_samples base!\n" + Style.RESET_ALL, file=stderr)
-
             case "qr":
-                request = self.path[5:]
-                qr = request[0:16]
                 if self._decide_qr(qr):
                     self.send_response(202) # ACCEPTED
                     print(Fore.GREEN + "\nUnused QR code!\n" + Style.RESET_ALL, file=stderr)
                     logger.log(self, "valid_QR")
-
             case "part":
-                request = self.path[5:]
-                qr = request[0:16]
                 if self._decide_qr(qr):
                     self.send_response(206) # PARTIAL CONTENT
                     print(Fore.GREEN + "\nUnused QR code with incomplete request!\n" + Style.RESET_ALL, file=stderr)
                     logger.log(self, "valid_QR_incomplete_request")
-
             case "onlyheader":
                 logger.log(self, "only_header")
                 self.send_response(415) # Unsupported Media Type
                 print(Fore.MAGENTA + "\nNonsence after correct header!\n" + Style.RESET_ALL, file=stderr)
-
             case "rubbish":
                 self.send_response(412) # Precondition Failed
                 print(Fore.MAGENTA + "\nWrong request header!\n" + Style.RESET_ALL, file=stderr)
-
-            case _:
-                pass
-
         self.end_headers()
