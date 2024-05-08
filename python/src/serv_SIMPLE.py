@@ -13,8 +13,6 @@ from sys import stderr
 from Logger import Logger
 from colorama import Fore, Style
 
-DB_LOGDATA = DB_from_docker if is_docker() else DB
-
 
 class MyServer(BaseHTTPRequestHandler):
     def _decide_request(self):
