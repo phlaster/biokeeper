@@ -11,7 +11,7 @@ import sys
 from datetime import date
 
 from Research import Research
-from db_connection import connect2db, DB
+from db_connection import *
 
 
 def str_to_date(s):
@@ -34,8 +34,7 @@ def get_offset(cursor, counter) -> int:
 
 
 def push_qrs(DB_logdata, research) -> None:
-    try:
-        connection, cursor = connect2db(DB_logdata)
+    with DBConnection(DB_logdata) as (connection, cursor):
         qrcodes = research.get_qrs()
 
         for i in range(research.offset+1, research.offset+1+research.n_samples):
@@ -46,27 +45,18 @@ def push_qrs(DB_logdata, research) -> None:
                 (i, research.research_id, qrcodes[i])
             )
         connection.commit()
-
         print(f"{research.n_samples} qr codes have been pushed to db!", file = sys.stderr)
-    finally:
-        cursor.close()
-        connection.close()
 
 
 def offsets(DB_logdata):
-    try:
-        connection, cursor = connect2db(DB_logdata)
+    with DBConnection(DB_logdata) as (connection, cursor):
         research_id = get_offset(cursor, 'counter_research')
         offset_qr = get_offset(cursor, 'counter_qr')
         return (research_id, offset_qr)
-    finally:
-        cursor.close()
-        connection.close()
 
 
 def push_research(DB_logdata, research):
-    try:
-        connection, cursor = connect2db(DB_logdata)
+    with DBConnection(DB_logdata) as (connection, cursor):
         cursor.execute("""
             INSERT INTO researches (research_id, research_type, num_samp, day_start, day_end)
             VALUES (%s, %s, %s, %s, %s);
@@ -80,9 +70,6 @@ def push_research(DB_logdata, research):
         print(f"Global counter counter_qr has been updated by {research.n_samples}", file = sys.stderr)
         print(f"Global counter counter_research has been updated by 1", file = sys.stderr)
         print(f"Research #{research.research_id} of type {research.research_type} with {research.n_samples} samples has been added!", file=sys.stderr)
-    finally:
-        cursor.close()
-        connection.close()
 
 
 
@@ -92,7 +79,7 @@ def main():
     day_start = str_to_date(sys.argv[3])
     day_end = str_to_date(sys.argv[4])
 
-    offset_research, offset_qr = offsets(DB)
+    offset_research, offset_qr = offsets(DB_LOGDATA)
 
     new_research = Research(
         offset_research+1,
@@ -103,8 +90,8 @@ def main():
         offset_qr
     )
 
-    push_research(DB, new_research)
-    push_qrs(DB, new_research)
+    push_research(DB_LOGDATA, new_research)
+    push_qrs(DB_LOGDATA, new_research)
 
     new_research.write_codes()
     new_research.write_pictures()

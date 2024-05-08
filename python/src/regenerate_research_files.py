@@ -5,7 +5,7 @@ C.l. args:
 
 from Research import Research
 import sys
-from db_connection import connect2db, DB
+from db_connection import *
 
 
 def date_to_str(d) -> str:
@@ -44,18 +44,12 @@ def extract_research_params(connection, id) -> tuple:
 
 
 def main():
-    try:
-        research_id = sys.argv[1]
-
-        connection, dbase = connect2db(DB)
+    research_id = sys.argv[1]
+    with DBConnection(DB_LOGDATA) as (connection, cursor):
         params = extract_research_params(connection, research_id)
         r = Research(*params)
         r.write_codes()
         r.write_pictures()
-
-    finally:
-        dbase.close()
-        connection.close()
 
 
 if __name__ == "__main__":
