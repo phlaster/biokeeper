@@ -22,6 +22,5 @@ services:
     image: postgres
     volumes:
       - ./postgres/dump.sql:/docker-entrypoint-initdb.d/dump.sql
-      - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     command: ["postgres", "-c", "log_statement=all"]
