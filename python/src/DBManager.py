@@ -14,7 +14,7 @@ class DBManager:
     def _validate_username(self, username:str):
         return len(username) > 4
 
-    def _hashing(self, password_bytes, salt):
+    def _hashing(self, password_bytes: bytes, salt: bytes):
         return hashlib.scrypt(password_bytes, salt=salt, n=2**14, r=8, p=1)
 
     def _hash_and_salt(self, password: str) -> tuple[bytes, bytes]:
@@ -102,7 +102,7 @@ class DBManager:
             else:
                 return 0
 
-    def is_user(self, username):
+    def is_user(self, username: str):
         with DBConnection(self.logdata) as (conn, cursor):
             cursor.execute("SELECT 1 FROM users WHERE username = %s", (username,))
             result = cursor.fetchone()
@@ -148,11 +148,9 @@ class DBManager:
             return status_key
 
     def change_user_status(self, username: str, new_status: str):
+        if not self.is_user(username):
+            raise ValueError(f"User '{username}' does not exist.")
         with DBConnection(self.logdata) as (conn, cursor):
-            cursor.execute("SELECT 1 FROM users WHERE username = %s", (username,))
-            if not cursor.fetchone():
-                raise ValueError(f"User '{username}' does not exist.")
-
             cursor.execute("SELECT user_status FROM users WHERE username = %s", (username,))
             current_status_id = cursor.fetchone()[0]
 
@@ -172,59 +170,53 @@ class DBManager:
             return new_status
 
     def change_user_name(self, old_username: str, new_username: str):
+        if not self.is_user(old_username):
+            raise ValueError(f"User '{old_username}' does not exist.")
+        
         if old_username==new_username:
             return old_username
 
+        if self.is_user(new_username):
+            raise ValueError(f"Username '{new_username}' is already taken.")
+
+        if not self._validate_username(new_username):
+            raise ValueError(f"Username '{new_username}' validation failed.")
+        
         with DBConnection(self.logdata) as (conn, cursor):
-            cursor.execute("SELECT 1 FROM users WHERE username = %s", (old_username,))
-            if not cursor.fetchone():
-                raise ValueError(f"User '{old_username}' does not exist.")
-
-            cursor.execute("SELECT 1 FROM users WHERE username = %s", (new_username,))
-            if cursor.fetchone():
-                raise ValueError(f"Username '{new_username}' is already taken.")
-
-            if not self._validate_username(new_username):
-                raise ValueError(f"Username '{new_username}' validation failed.")
-
             cursor.execute("UPDATE users SET username = %s WHERE username = %s", (new_username, old_username))
             conn.commit()
-            self.logger.log_message(f"User `{old_username}` changed name to `{new_username}`")
-            return new_username
+            
+        self.logger.log_message(f"User `{old_username}` changed name to `{new_username}`")
+        return new_username
 
-    def password_match(self, username, password):
+    def password_match(self, username: str, password: str):
         if not self.is_user(username):
             raise ValueError(f"No such user `{username}`.")
 
         with DBConnection(self.logdata) as (conn, cursor):
             cursor.execute("SELECT password_hash, password_salt FROM users WHERE username = %s", (username,))
             stored_hash, stored_salt = cursor.fetchone()
-        
         rehashed_password = self._hashing(password.encode('utf-8'), stored_salt)
 
-        if rehashed_password == bytes(stored_hash):
-            return True
-        else:
-            return False
+        return rehashed_password == bytes(stored_hash)
 
     def change_user_password(self, username: str, new_password: str):
+        if not self.is_user(username):
+            raise ValueError(f"User '{username}' does not exist.")
+        
+        if not self._validate_password(new_password):
+            raise ValueError(f"Password validation failed.")
+        
         with DBConnection(self.logdata) as (conn, cursor):
-            if not self.is_user(username):
-                raise ValueError(f"User '{username}' does not exist.")
-
-            if not self._validate_password(new_password):
-                raise ValueError(f"Password validation failed.")
-
             hashed_password, salt = self._hash_and_salt(new_password)
-
             cursor.execute("""
                 UPDATE users
                 SET password_hash = %s, password_salt = %s
                 WHERE username = %s;
             """, (hashed_password, salt, username))
             conn.commit()
-            self.logger.log_message(f"User `{username}` changed password.")
-            return True
+        self.logger.log_message(f"User `{username}` changed password.")
+        return True
 
     def all_users(self):
         with DBConnection(self.logdata) as (conn, cursor):
