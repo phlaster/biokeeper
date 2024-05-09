@@ -13,8 +13,10 @@ services:
     container_name: db_postgres
     restart: always
 
-    # exposing port directly is not safe! use SSH + `docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' db_postgres` ip with 5432 port instead
-    #ports:
+    # exposing port directly is not safe! use SSH +
+    # `docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' db_postgres`
+    # with 5432 port instead
+    # ports:
     #  - 5432:5432
     environment:
       - POSTGRES_PASSWORD=root
