@@ -10,3 +10,4 @@ serv_env/
 
 .vscode
 .cache.sqlite
+postgres/data/
