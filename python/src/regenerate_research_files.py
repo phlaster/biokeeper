@@ -4,58 +4,56 @@ C.l. args:
 """
 
 from Research import Research
-import sys
+import sys, os, qrcode
 from db_connection import *
 
 
-def date_to_str(d) -> str:
-    return '.'.join(str(d).split("-"))
+def retrieve_qrs(cursor, research_id):
+    cursor.execute("""
+        SELECT qr_text, qr_id
+        FROM generated_qrs
+        WHERE research_id = %s
+        ORDER BY qr_id ASC
+    """, (research_id,))
+    return cursor.fetchall()
 
+def write_codes(qrs, research_id):
+    research_dir = f"research_{research_id}"
+    if not os.path.isdir(research_dir):
+        os.makedirs(research_dir)
 
-def extract_research_params(connection, id) -> tuple:
-    try:
-        base = connection.cursor()
-        base.execute(f"SELECT * FROM researches WHERE research_id={id}")
-        extracted = base.fetchone()
+    N = len(qrs)
+    with open(research_dir + os.sep + f"research={research_id}" + f"_qr={N}.csv", "w") as f:
+        for (qr, id) in qrs:
+            print(f"{id},{qr}", file=f)
 
-        assert extracted != None, f"No research with id {id} was found!"
+def write_pictures(qrs, research_id):
+    research_dir = f"research_{research_id}"
+    if not os.path.isdir(research_dir):
+        os.makedirs(research_dir)
 
-        research_id = int(extracted[0])
-        day_start = date_to_str(extracted[3])
-        day_end = date_to_str(extracted[4])
-        research_type = int(extracted[1])
-        n_samples = int(extracted[2])
-
-        base.execute("SELECT COUNT(*) FROM generated_qrs WHERE research_id < %s", (id,))
-        qr_offset = int(base.fetchone()[0])
-
-        params = (
-            research_id,
-            day_start,
-            day_end,
-            research_type,
-            n_samples,
-            qr_offset
+    for (qr, id) in qrs:
+        qr_code = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=25,
+            border=2,
         )
-
-        return params
-    finally:
-        base.close()
-
+        qr_code.add_data(qr)
+        qr_code.make(fit=True)
+        qr_code.make_image(fill_color="black", back_color="white").save(research_dir+os.sep+str(id) + ".svg")
 
 def main():
     research_id = sys.argv[1]
     with DBConnection(DB_LOGDATA) as (connection, cursor):
-        params = extract_research_params(connection, research_id)
-        r = Research(*params)
-        r.write_codes()
-        r.write_pictures()
+        qrs = retrieve_qrs(cursor, research_id)
+        if len(qrs) == 0:
+            print(f"No entries for research #{research_id} in database!", file=sys.stderr)
+            exit()
+        write_codes(qrs, research_id)
+        write_pictures(qrs, research_id)
+        print(f"Research #{research_id} has been regenerated!", file=sys.stderr)
 
 
 if __name__ == "__main__":
-    try:
-        main()
-        print(f"Research has been regenerated!", file=sys.stderr)
-
-    except e:
-        print(e)
+    main()
