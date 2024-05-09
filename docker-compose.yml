@@ -23,4 +23,5 @@ services:
     volumes:
       - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
       - /etc/localtime:/etc/localtime:ro
+      - ./postgres/data/:/var/lib/postgresql/data/
     command: ["postgres", "-c", "log_statement=all"]
