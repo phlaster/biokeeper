@@ -21,6 +21,6 @@ services:
       - POSTGRES_PASSWORD=root
     image: postgres
     volumes:
-      - ./postgres/dump.sql:/docker-entrypoint-initdb.d/dump.sql
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
       - /etc/localtime:/etc/localtime:ro
     command: ["postgres", "-c", "log_statement=all"]
