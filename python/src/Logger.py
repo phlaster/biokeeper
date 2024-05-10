@@ -13,3 +13,7 @@ class Logger:
             ip = request.client_address[0]
             path = request.path[5:]
             print(datetime.now(), ip, comment, path, file=f, sep=' ')
+
+    def clear_logs(self) -> None:
+        with open(self.log_file, "w") as f:
+            return
