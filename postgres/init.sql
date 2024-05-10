@@ -67,7 +67,7 @@ VALUES
     ('cancelled', 'The research has been cancelled');
 CREATE TABLE researches (
     research_id SERIAL PRIMARY KEY,
-    research_type TEXT NOT NULL,
+    research_name TEXT NOT NULL,
     research_status INT NOT NULL DEFAULT 1,
     FOREIGN KEY (research_status) REFERENCES research_statuses(status_id),
     research_comment TEXT DEFAULT '',
