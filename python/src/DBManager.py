@@ -2,21 +2,41 @@ from DBConnection import DBConnection
 from Logger import Logger
 import hashlib
 import os
+import re
+from datetime import date
 
 class DBManager:
     def __init__(self, logdata, logfile="logs.log"):
         self.logdata = logdata
         self.logger = Logger(logfile)
 
-    def _validate_password(self, password:str):
-        return len(password) > 4
-
+    def _clear_logs(self):
+        self.logger.clear_logs()
+    
+    ################# Validations #################
+    def _validate_password(self, password:str, username: str):
+        """
+        --- logging ---
+        """
+        if len(password) > 4:
+            return True
+        else:
+            self.logger.log_message(f"Error: Password validation for '{username}' failed.")
+            return False
     def _validate_username(self, username:str):
-        return len(username) > 4
+        """
+        --- logging ---
+        """
+        if len(username) > 4:
+            return True
+        else:
+            self.logger.log_message(f"Error: Username '{username}' validation failed.")
+            return False
 
+    
+    ################# Pasword hashing #################
     def _hashing(self, password_bytes: bytes, salt: bytes):
         return hashlib.scrypt(password_bytes, salt=salt, n=2**14, r=8, p=1)
-
     def _hash_and_salt(self, password: str) -> tuple[bytes, bytes]:
         """
         Hashes a password with a salt using the scrypt algorithm.
@@ -26,7 +46,8 @@ class DBManager:
         hashed = self._hashing(password_bytes, salt)
         return (hashed, salt)
 
-
+    
+    ################# Counting #################
     def n_users(self, status:str="all"):
         """
         Returns number of users with different statuses.
@@ -47,11 +68,10 @@ class DBManager:
                     )
                 """, (status,))
             result = cursor.fetchone()
-            if result:
-                return result[0]
-            else:
-                return 0
-    
+        if result:
+            return result[0]
+        else:
+            return 0
     def n_researches(self, status:str="all"):
         """
         Returns number of researches with different statuses.
@@ -72,11 +92,10 @@ class DBManager:
                     )
                 """, (status,))
             result = cursor.fetchone()
-            if result:
-                return result[0]
-            else:
-                return 0
-    
+        if result:
+            return result[0]
+        else:
+            return 0
     def n_kits(self, status:str="all"):
         """
         Returns number of kits with different statuses.
@@ -97,101 +116,65 @@ class DBManager:
                     )
                 """, (status,))
             result = cursor.fetchone()
-            if result:
-                return result[0]
-            else:
-                return 0
+        if result:
+            return result[0]
+        else:
+            return 0
 
-    def is_user(self, username: str):
-        with DBConnection(self.logdata) as (conn, cursor):
-            cursor.execute("SELECT 1 FROM users WHERE username = %s", (username,))
-            result = cursor.fetchone()
-            return result is not None
-
-    def new_user(self, username:str, password:str):
-        username = str(username)
-        password = str(password)
-
-        with DBConnection(self.logdata) as (conn, cursor):
-            if self.is_user(username):
-                raise ValueError(f"Username '{username}' is already taken.")
-            if not self._validate_username(username):
-                raise ValueError(f"Username '{username}' validation failed.")
-            if not self._validate_password(password):
-                raise ValueError(f"Password validation failed.")
-
-            password_hash, salt = self._hash_and_salt(password)
-
-            cursor.execute("""
-                INSERT INTO users (username, password_hash, password_salt)
-                VALUES (%s, %s, %s)
-                RETURNING user_id
-            """, (username, password_hash, salt))
-            user_id = cursor.fetchone()[0]
-            conn.commit()
-            self.logger.log_message(f"User #{user_id} `{username}` has been created")
-            return user_id
     
-    def user_status(self, username: str):
+    ################# True/False #################
+    def is_user(self, username: str):
+        """
+        returns user_id if successfull
+        """
         with DBConnection(self.logdata) as (conn, cursor):
-            # Check if the user exists
-            cursor.execute("SELECT 1 FROM users WHERE username = %s", (username,))
-            if not cursor.fetchone():
-                raise ValueError(f"User '{username}' does not exist.")
-
-            cursor.execute("SELECT user_status FROM users WHERE username = %s", (username,))
-            user_status_id = cursor.fetchone()
-
-            cursor.execute("SELECT status_key FROM user_statuses WHERE status_id = %s", (user_status_id,))
-            status_key = cursor.fetchone()[0]
-
-            return status_key
-
-    def change_user_status(self, username: str, new_status: str):
+            cursor.execute("SELECT user_id FROM users WHERE username = %s", (username,))
+            result = cursor.fetchone()
+        return result[0] if result is not None else False
+    def is_research(self, research_name: str):
+        """
+        returns research_id if successfull
+        """
+        with DBConnection(self.logdata) as (conn, cursor):
+            cursor.execute("SELECT research_id FROM researches WHERE research_name = %s", (research_name,))
+            result = cursor.fetchone()
+        return result[0] if result is not None else False
+    def is_kit(self, kit_code: str):
+        """
+        returns kit_id if successfull
+        """
+        with DBConnection(self.logdata) as (conn, cursor):
+            cursor.execute("SELECT kit_id FROM kits WHERE kit_unique_code = %s", (kit_code,))
+            result = cursor.fetchone()
+        return result[0] if result is not None else False
+    def is_status_of(self, table_prefix: str, status: str):
+        """
+        -- logging --
+        returns (status_id, status_info) if successfull
+        """
+        with DBConnection(self.logdata) as (conn, cursor):
+            table_name = f"{table_prefix}_statuses"
+            try:
+                cursor.execute(f"""
+                    SELECT status_id, status_info
+                    FROM {table_name}
+                    WHERE status_key = '{status}'
+                """)
+                result = cursor.fetchone()
+            except Exception as e:
+                self.logger.log_message(f"Error: {e}".split("\n")[0])
+                return False
+        if result:
+            return result
+        else:
+            return False
+    def is_password_match(self, username: str, password: str):
+        """
+        -- logging --
+        """
         if not self.is_user(username):
-            raise ValueError(f"User '{username}' does not exist.")
-        with DBConnection(self.logdata) as (conn, cursor):
-            cursor.execute("SELECT user_status FROM users WHERE username = %s", (username,))
-            current_status_id = cursor.fetchone()[0]
-
-            cursor.execute("SELECT status_id, status_key FROM user_statuses WHERE status_key = %s", (new_status,))
-            new_status_query = cursor.fetchone()
-
-            if not new_status_query:
-                raise ValueError(f"Status '{new_status}' is not a valid status.")
-
-            new_status_id = new_status_query[0]
-            if new_status_id == current_status_id:
-                return new_status
-
-            cursor.execute("UPDATE users SET user_status = %s WHERE username = %s", (new_status_id, username))
-            conn.commit()
-            self.logger.log_message(f"User `{username}` changed status to {new_status}")
-            return new_status
-
-    def change_user_name(self, old_username: str, new_username: str):
-        if not self.is_user(old_username):
-            raise ValueError(f"User '{old_username}' does not exist.")
-        
-        if old_username==new_username:
-            return old_username
-
-        if self.is_user(new_username):
-            raise ValueError(f"Username '{new_username}' is already taken.")
-
-        if not self._validate_username(new_username):
-            raise ValueError(f"Username '{new_username}' validation failed.")
-        
-        with DBConnection(self.logdata) as (conn, cursor):
-            cursor.execute("UPDATE users SET username = %s WHERE username = %s", (new_username, old_username))
-            conn.commit()
-            
-        self.logger.log_message(f"User `{old_username}` changed name to `{new_username}`")
-        return new_username
-
-    def password_match(self, username: str, password: str):
-        if not self.is_user(username):
-            raise ValueError(f"No such user `{username}`.")
+            self.logger.log_message(f"Error: Authentication attempt for nonexisting username '{username}'.")
+            return False
 
         with DBConnection(self.logdata) as (conn, cursor):
             cursor.execute("SELECT password_hash, password_salt FROM users WHERE username = %s", (username,))
@@ -200,12 +183,250 @@ class DBManager:
 
         return rehashed_password == bytes(stored_hash)
 
+    
+    ################# Selections #################
+    def get_user_status(self, username: str):
+        """
+        -- logging --
+        """
+        if not self.is_user(username):
+            self.logger.log_message(f"Error: Attempt to check status of an nonexisting user '{username}'.")
+            return False
+        with DBConnection(self.logdata) as (conn, cursor):
+            cursor.execute("SELECT user_status FROM users WHERE username = %s", (username,))
+            user_status_id = cursor.fetchone()
+            cursor.execute("SELECT status_key FROM user_statuses WHERE status_id = %s", (user_status_id,))
+            status_key = cursor.fetchone()[0]
+        return status_key
+    def get_user_info(self, username: str):
+        """
+        Returns user information as a dictionary for the given username.
+        If the user does not exist, an empty dictionary is returned.
+        """
+        user_info_dict = {}
+
+        with DBConnection(self.logdata) as (conn, cursor):
+            cursor.execute("""
+                SELECT user_id, user_status, created_at, updated_at, n_samples_collected
+                FROM users
+                WHERE username = %s
+            """, (username,))
+            user_data = cursor.fetchone()
+
+            if user_data:
+                user_info_dict['user_id'] = user_data[0]
+
+                # Fetching status_key from user_statuses table
+                cursor.execute("SELECT status_key FROM user_statuses WHERE status_id = %s", (user_data[1],))
+                status_key = cursor.fetchone()[0]
+                user_info_dict['user_status'] = status_key
+
+                user_info_dict['created_at'] = user_data[2]
+                user_info_dict['updated_at'] = user_data[3]
+                user_info_dict['n_samples_collected'] = user_data[4]
+        return user_info_dict
+    def get_all_users(self):
+        """
+        Returns a dictionary where the keys are usernames and the values are
+        the corresponding user information dictionaries.
+        """
+        all_users_dict = {}
+
+        with DBConnection(self.logdata) as (conn, cursor):
+            cursor.execute("SELECT username FROM users")
+            usernames = cursor.fetchall()
+
+        for username_tuple in usernames:
+            username = username_tuple[0]
+            user_info_dict = self.get_user_info(username)
+            all_users_dict[username] = user_info_dict
+
+        return all_users_dict
+    
+    def get_research_users(self, research_name: str):
+        """
+        Returns the status key of the research with the given name.
+        If the research does not exist, False is returned.
+        """
+        if not self.is_research(research_name):
+            self.logger.log_message(f"Error: Research '{research_name}' does not exist.")
+            return False
+
+        with DBConnection(self.logdata) as (conn, cursor):
+            cursor.execute("""
+                SELECT research_status
+                FROM researches
+                WHERE research_name = %s
+            """, (research_name,))
+            research_status_id = cursor.fetchone()[0]
+
+            cursor.execute("""
+                SELECT status_key
+                FROM research_statuses
+                WHERE status_id = %s
+            """, (research_status_id,))
+            status_key = cursor.fetchone()[0]
+
+        return status_key
+    def get_research_info(self, research_name: str):
+        """
+        Returns research information as a dictionary for the given research name.
+        If the research does not exist, an empty dictionary is returned.
+        """
+        research_info_dict = {}
+
+        with DBConnection(self.logdata) as (conn, cursor):
+            cursor.execute("""
+                SELECT research_id, research_status, created_at, updated_at, created_by, day_start, day_end, n_samples, research_comment
+                FROM researches
+                WHERE research_name = %s
+            """, (research_name,))
+            research_data = cursor.fetchone()
+
+            if research_data:
+                research_info_dict['research_id'] = research_data[0]
+
+                cursor.execute("SELECT status_key FROM research_statuses WHERE status_id = %s", (research_data[1],))
+                status_key = cursor.fetchone()[0]
+                research_info_dict['research_status'] = status_key
+
+                research_info_dict['created_at'] = research_data[2]
+                research_info_dict['updated_at'] = research_data[3]
+                research_info_dict['created_by'] = research_data[4]
+                research_info_dict['day_start'] = research_data[5]
+                research_info_dict['day_end'] = research_data[6]
+                research_info_dict['n_samples'] = research_data[7]
+                research_info_dict['research_comment'] = research_data[8]
+
+        return research_info_dict
+    def get_all_researches(self):
+        """
+        Returns a dictionary where the keys are research names and the values are
+        the corresponding research information dictionaries.
+        """
+        all_researches_dict = {}
+
+        with DBConnection(self.logdata) as (conn, cursor):
+            cursor.execute("SELECT research_name FROM researches")
+            research_names = cursor.fetchall()
+
+        for research_name in research_names:
+            research_info_dict = self.get_research_info(research_name[0])
+            all_researches_dict[research_name[0]] = research_info_dict
+
+        return all_researches_dict
+    ################# Insertions #################
+    def new_user(self, username:str, password:str):
+        """
+        -- logging --
+        """
+        if self.is_user(username):
+            self.logger.log_message(f"Error: Username '{username}' is already taken.")
+            return False
+        if not self._validate_username(username):
+            return False
+        if not self._validate_password(password, username):
+            return False
+        
+        password_hash, salt = self._hash_and_salt(password)
+
+        with DBConnection(self.logdata) as (conn, cursor):
+            cursor.execute("""
+                INSERT INTO users (username, password_hash, password_salt)
+                VALUES (%s, %s, %s)
+                RETURNING user_id
+            """, (username, password_hash, salt))
+            user_id = cursor.fetchone()[0]
+            conn.commit()
+        self.logger.log_message(f"Info : User #{user_id} '{username}' has been created")
+        return user_id 
+    def new_research(self, research_name: str, research_comment: str, username: str, day_start: date):
+        """
+        Creates a new research entry in the database.
+        Returns the research_id if successful, otherwise False.
+        """
+        if self.is_research(research_name):
+            self.logger.log_message(f"Error: Research '{research_name}' is already exists.")
+            return False
+        user_id = self.is_user(username)
+        if not user_id:
+            self.logger.log_message(f"Error: Can't assign new research '{research_name}' to a nonexisting user '{username}'.")
+            return False
+
+        user_status = self.get_user_status(username)
+        if user_status != "admin":
+            self.logger.log_message(f"Error: User '{username}' of status '{user_status}' has no privilege to create researches.")
+            return False
+
+        with DBConnection(self.logdata) as (conn, cursor):
+            # Insert new research
+            cursor.execute("""
+                INSERT INTO researches (research_name, research_comment, created_by, day_start)
+                VALUES (%s, %s, %s, %s)
+                RETURNING research_id
+            """, (research_name, research_comment, user_id, day_start))
+            research_id = cursor.fetchone()[0]
+            conn.commit()
+        self.logger.log_message(f"Info : Research #{research_id} '{research_name}' starting on {day_start} created by '{username}'")
+        return research_id
+    
+    
+    ################# Updates #################
+    def change_user_status(self, username: str, new_status: str):
+        """
+        -- logging --
+        """
+        if not self.is_user(username):
+            self.logger.log_message(f"Error: Can't change status of a nonexisting user '{username}'.")
+            return False
+        
+        new_status_query = self.is_status_of("user", new_status)
+        if not new_status_query:
+            self.logger.log_message(f"Error: Status '{new_status}' is not a valid status.")
+            return False
+        new_status_id = new_status_query[0]
+
+        current_status = self.get_user_status(username)
+        current_status_id = self.is_status_of("user", current_status)[0]
+
+        if new_status_id == current_status_id:
+            # No status change, no logging
+            return new_status
+
+        with DBConnection(self.logdata) as (conn, cursor):
+            cursor.execute("UPDATE users SET user_status = %s WHERE username = %s", (new_status_id, username))
+            conn.commit()
+        self.logger.log_message(f"Info : User '{username}' changed status to '{new_status}'")
+        return new_status
+    def change_user_name(self, old_username: str, new_username: str):
+        if not self.is_user(old_username):
+            self.logger.log_message(f"Error: Can't change username of a nonexisting user '{old_username}'.")
+            return False
+        
+        if old_username==new_username:
+            # No username change, no logging
+            return old_username
+
+        if self.is_user(new_username):
+            self.logger.log_message(f"Error: Can't change username from '{old_username}' to '{new_username}'; name allready taken.")
+            return False
+
+        if not self._validate_username(new_username):
+            return False
+        
+        with DBConnection(self.logdata) as (conn, cursor):
+            cursor.execute("UPDATE users SET username = %s WHERE username = %s", (new_username, old_username))
+            conn.commit()
+            
+        self.logger.log_message(f"Info : User '{old_username}' changed name to '{new_username}'")
+        return new_username
     def change_user_password(self, username: str, new_password: str):
         if not self.is_user(username):
-            raise ValueError(f"User '{username}' does not exist.")
+            self.logger.log_message(f"Error: Can't change password of a nonexisting user '{username}'.")
+            return False
         
-        if not self._validate_password(new_password):
-            raise ValueError(f"Password validation failed.")
+        if not self._validate_password(new_password, username):
+            return False
         
         with DBConnection(self.logdata) as (conn, cursor):
             hashed_password, salt = self._hash_and_salt(new_password)
@@ -215,24 +436,68 @@ class DBManager:
                 WHERE username = %s;
             """, (hashed_password, salt, username))
             conn.commit()
-        self.logger.log_message(f"User `{username}` changed password.")
+        self.logger.log_message(f"Info : Changed password for user '{username}'.")
         return True
 
-    def all_users(self):
+    def change_research_status(self, research_name: str, new_status: str):
+        """
+        -- logging --
+        """
+        if not self.is_research(research_name):
+            self.logger.log_message(f"Error: Research '{research_name}' does not exist.")
+            return False
+
+        new_status_query = self.is_status_of("research", new_status)
+        if not new_status_query:
+            self.logger.log_message(f"Error: Status '{new_status}' is not a valid research status.")
+            return False
+        new_status_id = new_status_query[0]
+
+        current_status = self.get_research_users(research_name)
+        current_status_id = self.is_status_of("research", current_status)[0]
+
+        if new_status_id == current_status_id:
+            # No status change, no logging
+            return new_status
+
         with DBConnection(self.logdata) as (conn, cursor):
-            cursor.execute("""
-                SELECT u.username, u.user_id, us.status_key, u.created_at, u.n_samples_collected
-                FROM users u
-                JOIN user_statuses us ON u.user_status = us.status_id
-            """)
-            result = cursor.fetchall()
-        users_dict = {}
-        for row in result:
-            username, user_id, user_status, created_at, n_samples_collected = row
-            users_dict[username] = {
-                "user_id": user_id,
-                "user_status": user_status,
-                "created_at": created_at.date(),
-                "n_samples_collected": n_samples_collected
-            }
-        return users_dict
+            cursor.execute("UPDATE researches SET research_status = %s WHERE research_name = %s", (new_status_id, research_name))
+            conn.commit()
+
+        self.logger.log_message(f"Info : Research '{research_name}' status changed to '{new_status}'")
+        return new_status
+    def change_research_comment(self, research_name: str, comment: str):
+        """
+        -- logging
+        """
+        if not self.is_research(research_name):
+            self.logger.log_message(f"Error: Research '{research_name}' does not exist.")
+            return False
+
+        with DBConnection(self.logdata) as (conn, cursor):
+            cursor.execute("UPDATE researches SET research_comment = %s WHERE research_name = %s", (comment, research_name))
+            conn.commit()
+
+        self.logger.log_message(f"Info : Updated comment for research '{research_name}'")
+        return True
+    def change_research_day_end(self, research_name: str, day_end: date):
+        """
+        -- logging --
+        """
+        if not self.is_research(research_name):
+            self.logger.log_message(f"Error: Research '{research_name}' does not exist.")
+            return False
+
+        with DBConnection(self.logdata) as (conn, cursor):
+            cursor.execute("SELECT day_start FROM researches WHERE research_name = %s", (research_name,))
+            day_start = cursor.fetchone()[0]
+
+            if day_end < day_start:
+                self.logger.log_message(f"Error: Can't set ending day at {day_end} for research '{research_name}' that starts on {day_start}.")
+                return False
+
+            cursor.execute("UPDATE researches SET day_end = %s WHERE research_name = %s", (day_end, research_name))
+            conn.commit()
+
+        self.logger.log_message(f"Info : Now '{research_name}' ends on {day_end}")
+        return True
