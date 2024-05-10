@@ -22,13 +22,13 @@ CREATE TABLE user_statuses (
 );
 INSERT INTO user_statuses (status_key, status_info)
 VALUES 
-    ('observer', 'Default status for new users'),
+    ('admin', 'User has administrative privileges'),
     ('volunteer', 'User has contributed to researches'),
-    ('admin', 'User has administrative privileges');
+    ('observer', 'Default status for new users');
 CREATE TABLE users (
     user_id SERIAL PRIMARY KEY,
     username TEXT NOT NULL,
-    user_status INT NOT NULL DEFAULT 1,
+    user_status INT NOT NULL DEFAULT 3,
     FOREIGN KEY (user_status) REFERENCES user_statuses(status_id),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
