@@ -1,4 +1,4 @@
--- Function to update timestamp in `users` table
+-- Function to update timestamp in `updated_at` as the table modifies
 CREATE OR REPLACE FUNCTION update_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
