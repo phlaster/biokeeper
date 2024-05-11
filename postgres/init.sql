@@ -105,14 +105,19 @@ VALUES
     ('activated', 'The kit was recieved by a volunteer');
 CREATE TABLE kits (
     kit_id SERIAL PRIMARY KEY,
-    kit_unique_code TEXT NOT NULL,
+    kit_unique_code BYTEA NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     kit_status INT NOT NULL DEFAULT 1,
     FOREIGN KEY (kit_status) REFERENCES kit_statuses(status_id),
     n_qrs INT NOT NULL,
     user_id INT,
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
+CREATE TRIGGER autoupdate_kits
+BEFORE INSERT OR UPDATE ON kits
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at();
 --------------------------------------------------------------------
 
 
@@ -129,7 +134,7 @@ CREATE TABLE kits (
 
 CREATE TABLE qrs (
     qr_id SERIAL PRIMARY KEY,
-    qr_unique_code TEXT NOT NULL,
+    qr_unique_code BYTEA NOT NULL,
     kit_id INT NOT NULL,
     FOREIGN KEY (kit_id) REFERENCES kits(kit_id),
     is_used BOOLEAN DEFAULT false
@@ -141,7 +146,9 @@ CREATE TABLE samples (
     FOREIGN KEY (research_id) REFERENCES researches(research_id),
     qr_id INT NOT NULL,
     FOREIGN KEY (qr_id) REFERENCES qrs(qr_id),
-    collected_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    collected_at TIMESTAMP NOT NULL,
+    sent_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    in_lab_at TIMESTAMP,
     gps POINT,
     weather_conditions TEXT,
     user_comment TEXT,
