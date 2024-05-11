@@ -152,11 +152,11 @@ def test_change_research_status():
     research_name = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
     research_comment = "Test research"
     day_start = date.today()
-    new_research_id = db_manager.new_research(research_name, research_comment, name_1, day_start)
+    new_research_id = db_manager.new_research(research_name, name_1, day_start)
     assert not new_research_id, "unpriveledged user created the research!"
 
     db_manager.change_user_status(name_1, "admin")
-    new_research_id = db_manager.new_research(research_name, research_comment, name_1, day_start)
+    new_research_id = db_manager.new_research(research_name, name_1, day_start)
     assert new_research_id, "could not create research!"
 
     new_status = db_manager.change_research_status(research_name, "ongoing")
@@ -179,7 +179,7 @@ def test_change_research_comment():
     research_comment = "Test research"
     day_start = date.today()
     db_manager.change_user_status(name_1, "admin")
-    new_research_id = db_manager.new_research(research_name, research_comment, name_1, day_start)
+    new_research_id = db_manager.new_research(research_name, name_1, day_start)
     assert new_research_id, "could not create research!"
 
     new_comment = "Updated research comment"
