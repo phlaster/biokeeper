@@ -10,6 +10,7 @@ from DBManager import DBManager
 logdata = db_connection.DB_LOGDATA
 db_manager = DBManager(logdata, logfile="test.log")
 db_manager._clear_logs()
+db_manager.logger.log_message("Test started!")
 
 # Test username and password validation
 assert db_manager._validate_username("validuser"), "Valid username should pass validation"
