@@ -9,11 +9,6 @@ $$
 LANGUAGE plpgsql;
 
 
-
-
-
-
-
 -------------------------- USERS ------------------------
 CREATE TABLE user_statuses (
     status_id SERIAL PRIMARY KEY,
@@ -40,15 +35,10 @@ CREATE TRIGGER autoupdate_users
 BEFORE INSERT OR UPDATE ON users
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at();
+CREATE INDEX ON users (username);
+CREATE INDEX ON users (user_status);
+CREATE INDEX ON user_statuses (status_id);
 -----------------------------------------------------
-
-
-
-
-
-
-
-
 
 
 
@@ -83,12 +73,13 @@ CREATE TRIGGER autoupdate_researches
 BEFORE INSERT OR UPDATE ON researches
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at();
+CREATE INDEX ON researches (research_status);
+CREATE INDEX ON researches (research_name);
+CREATE INDEX ON researches (created_by);
+CREATE INDEX ON researches (day_start);
+CREATE INDEX ON researches (day_end);
+CREATE INDEX ON research_statuses (status_key);
 ----------------------------------------------------
-
-
-
-
-
 
 
 
@@ -118,17 +109,11 @@ CREATE TRIGGER autoupdate_kits
 BEFORE INSERT OR UPDATE ON kits
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at();
+CREATE INDEX ON kits (user_id);
+CREATE INDEX ON kits (user_id);
+CREATE INDEX ON kits (kit_unique_code);
+CREATE INDEX ON kit_statuses (status_key);
 --------------------------------------------------------------------
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -139,6 +124,9 @@ CREATE TABLE qrs (
     FOREIGN KEY (kit_id) REFERENCES kits(kit_id),
     is_used BOOLEAN DEFAULT false
 );
+CREATE INDEX ON qrs (is_used);
+CREATE INDEX ON qrs (qr_unique_code);
+
 
 CREATE TABLE samples (
     sample_id SERIAL PRIMARY KEY,
@@ -154,23 +142,18 @@ CREATE TABLE samples (
     user_comment TEXT,
     photo BYTEA -- https://www.postgresql.org/docs/7.4/jdbc-binary-data.html
 );
-
-
-
-
-
+CREATE INDEX ON samples (research_id);
+CREATE INDEX ON samples (collected_at);
+CREATE INDEX ON samples (qr_id);
 
 
 
 ------------------------ INDEXING ---------------------------------------
-CREATE INDEX idx_username ON users (username);
-CREATE INDEX idx_user_status ON users (user_status);
-CREATE INDEX idx_research_status ON researches (research_status);
-CREATE INDEX idx_created_by ON researches (created_by);
-CREATE INDEX idx_day_start ON researches (day_start);
-CREATE INDEX idx_day_end ON researches (day_end);
-CREATE INDEX idx_user_id ON kits (user_id);
-CREATE INDEX idx_kit_status ON kits (kit_status);
-CREATE INDEX idx_is_used ON qrs (is_used);
-CREATE INDEX idx_research_id ON samples (research_id);
-CREATE INDEX idx_collected_at ON samples (collected_at);
+ANALYZE user_statuses;
+ANALYZE users;
+ANALYZE research_statuses;
+ANALYZE researches;
+ANALYZE kit_statuses;
+ANALYZE kits;
+ANALYZE qrs;
+ANALYZE samples;
