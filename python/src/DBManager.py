@@ -782,3 +782,48 @@ class DBManager:
 
         self.logger.log_message(f"Info : Owner of Kit #{kit_id} changed to '{username}'")
         return kit_id
+
+    def change_sample_details(self, sample_id: int, weather: str = None, user_comment: str = None, photo: bytes = None):
+        """
+        -- logging --
+        Updates the weather conditions, user comment, and photo of an existing sample in the database.
+        Returns True if the update is successful, False otherwise.
+        """
+        if weather == user_comment == photo == None:
+            return False
+        with DBConnection(self.logdata) as (conn, cursor):
+            cursor.execute("SELECT * FROM samples WHERE sample_id = %s", (sample_id,))
+            sample_data = cursor.fetchone()
+            if not sample_data:
+                self.logger.log_message(f"Error: Sample #{sample_id} does not exist.")
+                return False
+
+            logmsg = []
+            update_query = "UPDATE samples SET "
+            update_values = []
+
+            if weather is not None:
+                update_query += "weather_conditions = %s, "
+                update_values.append(weather)
+                logmsg.append("weather info")
+
+            if user_comment is not None:
+                update_query += "user_comment = %s, "
+                update_values.append(user_comment)
+                logmsg.append("user comment")
+
+            if photo is not None:
+                update_query += "photo = %s, "
+                update_values.append(photo)
+                logmsg.append("photo")
+
+            # Remove the trailing comma and space
+            update_query = update_query[:-2]
+
+            update_query += " WHERE sample_id = %s"
+            update_values.append(sample_id)
+
+            cursor.execute(update_query, update_values)
+            conn.commit()
+            self.logger.log_message(f"Info : Pushed details: {', '.join(logmsg)} for sample #{sample_id}.")
+        return True
