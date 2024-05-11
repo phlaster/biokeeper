@@ -287,6 +287,9 @@ class DBManager:
         If the research does not exist, an empty dictionary is returned (equivalent to False).
         """
         research_info_dict = {}
+        if not self.is_research(research_name):
+            self.logger.log_message(f"Error: Research '{research_name}' does not exist.")
+            return research_info_dict
 
         with DBConnection(self.logdata) as (conn, cursor):
             cursor.execute("""
