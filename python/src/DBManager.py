@@ -3,7 +3,7 @@ from Logger import Logger
 import hashlib
 import os
 import re
-from datetime import date
+import datetime
 
 class DBManager:
     def __init__(self, logdata, logfile="logs.log"):
@@ -687,7 +687,7 @@ class DBManager:
 
         self.logger.log_message(f"Info : Updated comment for research '{research_name}'")
         return True
-    def change_research_day_end(self, research_name: str, day_end: date):
+    def change_research_day_end(self, research_name: str, day_end: datetime.date):
         """
         -- logging --
         returns False if unsuccessfull

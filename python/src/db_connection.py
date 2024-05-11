@@ -48,7 +48,7 @@ def push_request(db_logdata, request) -> None:
             INSERT INTO collected_samples (qr_id, date, time, temperature, gps)
             VALUES (%s, %s, %s, %s, POINT(%s));
             """,
-            (qr_id, date.today(), datetime.now(), temperature, location)
+            (qr_id, date.today(), datetime.datetime.now(), temperature, location)
         )
         connection.commit()
 
