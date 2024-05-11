@@ -194,19 +194,6 @@ class DBManager:
             cursor.execute("SELECT kit_id FROM kits WHERE kit_id = %s", (kit_id,))
             result = cursor.fetchone()
         return result[0] if result is not None else False
-    def is_qr(self, qr_bytes: bytes):
-        """
-        Checks if the given bytes correspond to any qr_unique_code in the database.
-        Returns the qr_id if a match is found, otherwise False.
-        """
-        with DBConnection(self.logdata) as (conn, cursor):
-            cursor.execute("SELECT qr_id, is_used FROM qrs WHERE qr_unique_code = %s", (qr_bytes,))
-            result = cursor.fetchone()
-
-        if result:
-            return result
-        else:
-            return False
 
     
     ################# Selections #################
@@ -423,6 +410,21 @@ class DBManager:
             all_kits_dict[kit_id] = kit_info
 
         return all_kits_dict
+
+    def get_qr_info(self, qr_bytes: bytes):
+        """
+        returns dict with QR info if successfull
+        empty dict otherwise
+        """
+        with DBConnection(self.logdata) as (conn, cursor):
+            cursor.execute("SELECT qr_id, is_used, kit_id FROM qrs WHERE qr_unique_code = %s", (qr_bytes,))
+            result = cursor.fetchone()
+
+        if result:
+            return {'qr_id': int(result[0]), 'is_used': bool(result[1]), 'kit_id': int(result[2])}
+        else:
+            return {}
+
 
     ################# Insertions #################
     def new_user(self, username:str, password:str):
