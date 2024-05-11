@@ -95,7 +95,7 @@ class DBManager:
                     FROM researches 
                     WHERE research_status IN (
                         SELECT status_id 
-                        FROM user_statuses 
+                        FROM research_statuses 
                         WHERE status_key = %s
                     )
                 """, (status,))
@@ -119,7 +119,7 @@ class DBManager:
                     FROM kits 
                     WHERE kit_status IN (
                         SELECT status_id 
-                        FROM user_statuses 
+                        FROM kit_statuses 
                         WHERE status_key = %s
                     )
                 """, (status,))
