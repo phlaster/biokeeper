@@ -354,47 +354,55 @@ class DBManager:
         """
         -- logging --
         Returns a list of tuples containing (qr_id, qr_unique_code) for the kit with the given kit_id.
-        If the kit does not exist, returns False.
+        If the kit does not exist, returns empty dict.
         """
+        qr_info = {}
         if not self.is_kit(kit_id):
             self.logger.log_message(f"Error: Kit with ID {kit_id} does not exist.")
-            return False
+            return qr_info
 
-        qr_info = []
 
         with DBConnection(self.logdata) as (conn, cursor):
             cursor.execute("SELECT qr_id, qr_unique_code FROM qrs WHERE kit_id = %s", (kit_id,))
             qr_info_tuples = cursor.fetchall()
 
         for qr_id, qr_unique_code in qr_info_tuples:
-            qr_info.append((qr_id, bytes(qr_unique_code)))
+            qr_info[qr_id] = bytes(qr_unique_code)
 
         return qr_info
     def get_kit_info(self, kit_id: int):
         """
         -- logging --
         Returns a dictionary containing kit information for the kit with the given kit_id.
-        If the kit does not exist, returns False.
+        If the kit does not exist, returns empty dict.
         """
+        kit_info_dict = {}
         if not self.is_kit(kit_id):
             self.logger.log_message(f"Error: Kit with ID {kit_id} does not exist.")
-            return False
-
-        kit_info_dict = {}
+            return kit_info_dict
 
         with DBConnection(self.logdata) as (conn, cursor):
-            cursor.execute("SELECT kit_unique_code, created_at, updated_at, kit_status FROM kits WHERE kit_id = %s", (kit_id,))
+            cursor.execute("SELECT kit_unique_code, created_at, updated_at, kit_status, user_id FROM kits WHERE kit_id = %s", (kit_id,))
             kit_data = cursor.fetchone()
 
-            kit_info_dict['kit_unique_code'] = bytes(kit_data[0])
-            kit_info_dict['created_at'] = kit_data[1]
-            kit_info_dict['updated_at'] = kit_data[2]
+            if kit_data:
+                kit_info_dict['kit_unique_code'] = bytes(kit_data[0])
+                kit_info_dict['created_at'] = kit_data[1]
+                kit_info_dict['updated_at'] = kit_data[2]
 
-            cursor.execute("SELECT status_key FROM kit_statuses WHERE status_id = %s", (kit_data[3],))
-            kit_status_key = cursor.fetchone()[0]
-            kit_info_dict['kit_status'] = kit_status_key
+                cursor.execute("SELECT status_key FROM kit_statuses WHERE status_id = %s", (kit_data[3],))
+                kit_status_key = cursor.fetchone()[0]
+                kit_info_dict['kit_status'] = kit_status_key
 
-            kit_info_dict['qrs'] = self.get_kit_qrs(kit_id)
+                if kit_data[4]:  # Check if user_id is not None
+                    cursor.execute("SELECT user_id, username FROM users WHERE user_id = %s", (kit_data[4],))
+                    owner_data = cursor.fetchone()
+                    owner_dict = {'user_id': owner_data[0], 'username': owner_data[1]} if owner_data else None
+                    kit_info_dict['owner'] = owner_dict
+                else:
+                    kit_info_dict['owner'] = None
+
+                kit_info_dict['qrs'] = self.get_kit_qrs(kit_id)
 
         return kit_info_dict
     def get_all_kits(self):
