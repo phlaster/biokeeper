@@ -510,70 +510,86 @@ class DBManager:
         self.logger.log_message(f"Info : Kit #{kit_id} with {n_qrs} QRs has been created")
         return kit_id
 
-    # def new_sample(self,
-    #     qr_bytes: bytes,
-    #     research_id: int,
-    #     gps: tuple[float, float],
-    #     weather: str = None,
-    #     user_comment: str = None,
-    #     photo: bytes = None
-    # ):
-    #     """
-    #     -- logging --
-    #     Inserts a new sample into the database with the provided information.
-    #     Checks if the research is ongoing, the QR code is valid and not used, the kit is activated, and the user is a volunteer.
-    #     Increments the n_samples_collected of the user by 1 if all conditions are met.
-    #     """
-    #     research_status = self.get_research_status(research_id)
-    #     if not research_status:
-    #         self.logger.log_message(f"Error: Invalid research id #{research_id}.")
-    #         return False
+    def new_sample(self,
+        qr_bytes: bytes,
+        research_name: str,
+        collected_at: datetime.datetime,
+        gps: tuple[float, float],
+        weather: str = None,
+        user_comment: str = None,
+        photo: bytes = None
+    ):
+        """
+        -- logging --
+        Returns sample_id if successfull
+        Inserts a new sample into the database with the provided information.
+        Checks if the research is ongoing, the QR code is valid and not used, the kit is activated, and the user is a volunteer.
+        Increments the n_samples_collected of the user by 1 if all conditions are met.
+        """
+        if collected_at > datetime.datetime.now():
+            self.logger.log_message(f"Warn : The sample seems to be collected in future at {collected_at}.")
 
-    #     if research_status != "ongoing":
-    #         self.logger.log_message(f"Error: Research #{research_id} is not in 'ongoing' status.")
-    #         return False
+        research_info = self.get_research_info(research_name)
+        if not research_info:
+            self.logger.log_message(f"Error: Invalid research name '{research_name}'.")
+            return False
 
-    #     qr_status = self.is_qr(qr_bytes)
-    #     if not qr_status:
-    #         self.logger.log_message(f"Error: No such QR in database.")
-    #         return False
+        if research_info["research_status"] != "ongoing":
+            self.logger.log_message(f"Error: Research '{research_name}' is not in 'ongoing' status.")
+            return False
+
+        qr_info = self.get_qr_info(qr_bytes)
+        if not qr_info:
+            self.logger.log_message(f"Error: No such QR in database.")
+            return False
         
-    #     if not qr_status[1]:
-    #         self.logger.log_message(f"Error: QR code is already used.")
-    #         return False
+        qr_id = qr_info["qr_id"]
+        if qr_info["is_used"]:
+            self.logger.log_message(f"Error: QR #{qr_id} already 'is_used'.")
+            return False
+        
+        kit_id = qr_info["kit_id"]
+        if not kit_id:
+            self.logger.log_message(f"Error: QR code is not assigned to any kit.")
+            return False
 
-    #     with DBConnection(self.logdata) as (conn, cursor):
-    #         cursor.execute("SELECT kit_id FROM qrs WHERE qr_id = %s AND is_used = false", (qr_id,))
-    #         kit_id = cursor.fetchone()
-    #         if not kit_id:
-    #             self.logger.log_message(f"Error: QR code '{qr_bytes}' is already used or invalid.")
-    #             return False
+        kit_info = self.get_kit_info(kit_id)
+        if not kit_info:
+            self.logger.log_message(f"Error: No #{kit_id} was found (very strange!).")
+            return False
+        
+        kit_owner = kit_info["owner"]
+        if not kit_owner:
+            self.logger.log_message(f"Error: Kit #{kit_id} has no owner.")
+            return False
 
-    #         cursor.execute("SELECT kit_status, user_id FROM kits WHERE kit_id = %s", (kit_id,))
-    #         kit_status, user_id = cursor.fetchone()
-    #         if kit_status != "activated":
-    #             self.logger.log_message(f"Error: Kit associated with QR '{qr_bytes}' is not activated.")
-    #             return False
+        if kit_info["kit_status"] != "activated":
+            self.logger.log_message(f"Error: Kit associated with QR hasn't been activated.")
+            return False
 
-    #         cursor.execute("SELECT user_status FROM users WHERE user_id = %s", (user_id,))
-    #         user_status = cursor.fetchone()[0]
-    #         if user_status != "volunteer":
-    #             self.logger.log_message(f"Error: User associated with the kit is not a volunteer.")
-    #             return False
+        kit_owner_status = self.get_user_status(kit_owner["username"])
+        if kit_owner_status not in ['admin', 'volunteer']:
+            self.logger.log_message(f"Error: Owner of kit '{kit_owner}' is of status '{kit_owner_status}', which is not enough to publish samples.")
+            return False
+        
+        with DBConnection(self.logdata) as (conn, cursor):
 
-    #         # Increment n_samples_collected of the user by 1
-    #         cursor.execute("UPDATE users SET n_samples_collected = n_samples_collected + 1 WHERE user_id = %s", (user_id,))
+            cursor.execute("""
+                INSERT INTO samples (research_id, qr_id, collected_at, gps, weather_conditions, user_comment, photo)
+                VALUES (%s, %s, %s, POINT(%s), %s, %s, %s)
+                RETURNING sample_id
+            """, (research_info['research_id'], qr_id, collected_at, str(gps), weather, user_comment, photo))
+            sample_id = cursor.fetchone()[0]
+            
+            cursor.execute("UPDATE qrs SET is_used = true WHERE qr_id = %s", (qr_id,))
+            self.logger.log_message(f"Info : QR #{qr_id} is now 'is_used'")
+            cursor.execute("UPDATE users SET n_samples_collected = n_samples_collected + 1 WHERE user_id = %s RETURNING n_samples_collected", (kit_owner["user_id"],))
+            new_personal_score = cursor.fetchone()[0]
+            self.logger.log_message(f"Info : Personal counter of user '{kit_owner["username"]}' is now {new_personal_score}")
+            conn.commit()
 
-    #         # Insert the new sample
-    #         cursor.execute("""
-    #             INSERT INTO samples (research_id, qr_id, gps, weather_conditions, user_comment, photo)
-    #             VALUES (%s, %s, %s, %s, %s, %s)
-    #         """, (research_id, qr_id, gps, weather, user_comment, photo))
-
-    #         conn.commit()
-
-    #     self.logger.log_message("Info: New sample inserted successfully.")
-    #     return True
+        self.logger.log_message("Info : New sample inserted successfully.")
+        return sample_id
 
 
     ################# Updates #################
