@@ -452,7 +452,7 @@ class DBManager:
             conn.commit()
         self.logger.log_message(f"Info : User #{user_id} '{username}' has been created")
         return user_id 
-    def new_research(self, research_name: str, username: str, day_start: date, research_comment: str = None):
+    def new_research(self, research_name: str, username: str, day_start: datetime.date, research_comment: str = None):
         """
         -- logging --
         Returns the research_id if successful, otherwise False.
