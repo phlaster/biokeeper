@@ -130,7 +130,7 @@ def researches():
     assert DBM.get_user_status(research_user) == "observer"
     
     research_name = rstr()
-    day_start = date(2020, 1, 1)
+    day_start = datetime.date(2020, 1, 1)
     n_res = DBM.n_researches()
 
     n_res_pending = DBM.n_researches("pending")
@@ -177,8 +177,8 @@ def researches():
 
     #changing other columns
     random_comment = rstr(100)
-    bad_day_end = date(2019, 1, 1) # less than day_start
-    good_day_end = date(2025, 1, 1)
+    bad_day_end = datetime.date(2019, 1, 1) # less than day_start
+    good_day_end = datetime.date(2025, 1, 1)
 
     assert DBM.change_research_comment(research_name, random_comment)
     assert not DBM.change_research_day_end(research_name, bad_day_end)
@@ -226,7 +226,7 @@ def kits():
     assert isinstance(qr_key, int)
     qr_bytes = kit_1_info["qrs"][qr_key]
     assert isinstance(qr_bytes, bytes)
-    assert DBM.is_qr(qr_bytes)
+    assert DBM.get_qr_info(qr_bytes)
 
     # Kit owners
     assert kit_1_info['owner'] == None
@@ -242,9 +242,9 @@ def qrcodes():
     assert isinstance(qrs, dict)
     for id in qrs:
         binary = qrs[id]
-        assert DBM.is_qr(binary)
-        assert not DBM.is_qr(binary)['is_used']
-        assert DBM.is_qr(binary)['kit_id'] == new_kit
+        assert DBM.get_qr_info(binary)
+        assert not DBM.get_qr_info(binary)['is_used']
+        assert DBM.get_qr_info(binary)['kit_id'] == new_kit
 
 
 def samples():
@@ -267,9 +267,16 @@ def samples():
     DBM.change_kit_owner(kit_id, research_user)
     assert not DBM.new_sample(some_qr_bytes, research_name, datetime.datetime.now(), (2.4, 2.1)) # kit has not been activated
     DBM.change_kit_status(kit_id, "activated")
-    sample_id = DBM.new_sample(some_qr_bytes, research_name, datetime.datetime.now(), (2.4, 2.1))
+
+    n_collected = DBM.get_user_info(research_user)["n_samples_collected"]
+    assert not DBM.get_qr_info(some_qr_bytes)["is_used"]
+
+    sample_id = DBM.new_sample(some_qr_bytes, research_name, datetime.datetime.now(), (2.4, 2.1)) # the PUSH
     assert isinstance(sample_id, int)
+    assert DBM.get_user_info(research_user)["n_samples_collected"] == n_collected + 1 == 1
+    assert DBM.get_qr_info(some_qr_bytes)["is_used"]
     assert not DBM.new_sample(some_qr_bytes, research_name, datetime.datetime.now(), (2.4, 2.1)) # QR is used
+
 
 logdata = db_connection.DB_LOGDATA
 DBM = DBManager(logdata, logfile="test_new.log")
@@ -286,14 +293,14 @@ passwd_3 = rstr()
 global test_time
 test_time = time()
 try:
-    # existing_statuses()
-    # new_user()
-    # user_info()
-    # user_renaming()
-    # counting_users()
-    # researches()
-    # kits()
-    # qrcodes()
+    existing_statuses()
+    new_user()
+    user_info()
+    user_renaming()
+    counting_users()
+    researches()
+    kits()
+    qrcodes()
     samples()
     print(f"All tests passed in {round(time()-test_time, ndigits=1)} s.")
 except Exception as e:
