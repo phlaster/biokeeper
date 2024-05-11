@@ -214,7 +214,6 @@ def kits():
     # info
     kit_1_info = DBM.get_kit_info(kit_id)
     kit_2_info = DBM.get_kit_info(kit_new_id)
-    print(DBM.get_kit_info(9999999))
     assert DBM.get_kit_info(9999999) == {}
     assert isinstance(kit_1_info, dict) and isinstance(kit_2_info, dict)
     assert not kit_1_info == kit_2_info
