@@ -13,10 +13,14 @@ class DBManager:
     def _clear_logs(self):
         self.logger.clear_logs()
     
+    def _generate_qr_bytes(self, n: int, l: int):
+        return [os.urandom(l) for _ in range(n)]
     ################# Validations #################
     def _validate_password(self, password:str, username: str):
         """
         --- logging ---
+
+        Simplest validation possible. Rest is for the frontenders
         """
         if len(password) > 4:
             return True
@@ -26,6 +30,7 @@ class DBManager:
     def _validate_username(self, username:str):
         """
         --- logging ---
+        Simplest validations for a username
         """
         if len(username) > 4:
             return True
@@ -35,7 +40,10 @@ class DBManager:
 
     
     ################# Pasword hashing #################
-    def _hashing(self, password_bytes: bytes, salt: bytes):
+    def _hashing(self, password_bytes: bytes, salt: bytes) -> bytes:
+        """
+        hashing password with salt
+        """
         return hashlib.scrypt(password_bytes, salt=salt, n=2**14, r=8, p=1)
     def _hash_and_salt(self, password: str) -> tuple[bytes, bytes]:
         """
@@ -52,7 +60,7 @@ class DBManager:
         """
         Returns number of users with different statuses.
         'all' for all statuses OR
-        currently possible: "observer", "volunteer", "admin"
+        Currently possible statuses: "admin", "volunteer", "observer"
         """
         with DBConnection(self.logdata) as (conn, cursor):
             if status == "all":
@@ -76,7 +84,7 @@ class DBManager:
         """
         Returns number of researches with different statuses.
         'all' for all statuses OR
-        currently possible: "pending", "ongoing", "paused", "ended", "cancelled"
+        Currently possible statuses: "pending", "ongoing", "paused", "ended", "cancelled"
         """
         with DBConnection(self.logdata) as (conn, cursor):
             if status == "all":
@@ -100,7 +108,7 @@ class DBManager:
         """
         Returns number of kits with different statuses.
         'all' for all statuses OR
-        currently possible: "created", "sent", "activated"
+        Currently possible statuses: "created", "sent", "activated"
         """
         with DBConnection(self.logdata) as (conn, cursor):
             if status == "all":
@@ -123,34 +131,13 @@ class DBManager:
 
     
     ################# True/False #################
-    def is_user(self, username: str):
-        """
-        returns user_id if successfull
-        """
-        with DBConnection(self.logdata) as (conn, cursor):
-            cursor.execute("SELECT user_id FROM users WHERE username = %s", (username,))
-            result = cursor.fetchone()
-        return result[0] if result is not None else False
-    def is_research(self, research_name: str):
-        """
-        returns research_id if successfull
-        """
-        with DBConnection(self.logdata) as (conn, cursor):
-            cursor.execute("SELECT research_id FROM researches WHERE research_name = %s", (research_name,))
-            result = cursor.fetchone()
-        return result[0] if result is not None else False
-    def is_kit(self, kit_code: str):
-        """
-        returns kit_id if successfull
-        """
-        with DBConnection(self.logdata) as (conn, cursor):
-            cursor.execute("SELECT kit_id FROM kits WHERE kit_unique_code = %s", (kit_code,))
-            result = cursor.fetchone()
-        return result[0] if result is not None else False
     def is_status_of(self, table_prefix: str, status: str):
         """
         -- logging --
-        returns (status_id, status_info) if successfull
+        returns (status_id, status_info) if successfull;
+        Examples:
+        is_status_of("user", "admin") == True
+        is_status_of("kit", "thrown away") == False     # kit has no status 'thrown away'
         """
         with DBConnection(self.logdata) as (conn, cursor):
             table_name = f"{table_prefix}_statuses"
@@ -182,12 +169,51 @@ class DBManager:
         rehashed_password = self._hashing(password.encode('utf-8'), stored_salt)
 
         return rehashed_password == bytes(stored_hash)
+    
+    def is_user(self, username: str):
+        """
+        returns user_id if successfull
+        """
+        with DBConnection(self.logdata) as (conn, cursor):
+            cursor.execute("SELECT user_id FROM users WHERE username = %s", (username,))
+            result = cursor.fetchone()
+        return result[0] if result is not None else False
+    def is_research(self, research_name: str):
+        """
+        returns research_id if successfull
+        """
+        with DBConnection(self.logdata) as (conn, cursor):
+            cursor.execute("SELECT research_id FROM researches WHERE research_name = %s", (research_name,))
+            result = cursor.fetchone()
+        return result[0] if result is not None else False
+    def is_kit(self, kit_id: str):
+        """
+        returns kit_id if successfull
+        """
+        with DBConnection(self.logdata) as (conn, cursor):
+            cursor.execute("SELECT kit_id FROM kits WHERE kit_id = %s", (kit_id,))
+            result = cursor.fetchone()
+        return result[0] if result is not None else False
+    def is_qr(self, qr_bytes: bytes):
+        """
+        Checks if the given bytes correspond to any qr_unique_code in the database.
+        Returns the qr_id if a match is found, otherwise False.
+        """
+        with DBConnection(self.logdata) as (conn, cursor):
+            cursor.execute("SELECT qr_id, is_used FROM qrs WHERE qr_unique_code = %s", (qr_bytes,))
+            result = cursor.fetchone()
+
+        if result:
+            return result
+        else:
+            return False
 
     
     ################# Selections #################
     def get_user_status(self, username: str):
         """
         -- logging --
+        if username is incorrect returns False
         """
         if not self.is_user(username):
             self.logger.log_message(f"Error: Attempt to check status of an nonexisting user '{username}'.")
@@ -201,7 +227,7 @@ class DBManager:
     def get_user_info(self, username: str):
         """
         Returns user information as a dictionary for the given username.
-        If the user does not exist, an empty dictionary is returned.
+        If the user does not exist, an empty dictionary is returned (equivalent to False).
         """
         user_info_dict = {}
 
@@ -243,7 +269,7 @@ class DBManager:
 
         return all_users_dict
     
-    def get_research_users(self, research_name: str):
+    def get_research_status(self, research_name: str):
         """
         Returns the status key of the research with the given name.
         If the research does not exist, False is returned.
@@ -271,7 +297,7 @@ class DBManager:
     def get_research_info(self, research_name: str):
         """
         Returns research information as a dictionary for the given research name.
-        If the research does not exist, an empty dictionary is returned.
+        If the research does not exist, an empty dictionary is returned (equivalent to False).
         """
         research_info_dict = {}
 
@@ -314,11 +340,95 @@ class DBManager:
             research_info_dict = self.get_research_info(research_name[0])
             all_researches_dict[research_name[0]] = research_info_dict
 
-        return all_researches_dict
+        return all_researches_dict 
+
+    def get_kit_status(self, kit_id: int):
+        """
+        -- logging --
+        Returns the status of a kit with the given kit_id.
+        If the kit does not exist, returns False.
+        """
+        if not self.is_kit(kit_id):
+            self.logger.log_message(f"Error: Kit with ID {kit_id} does not exist.")
+            return False
+
+        with DBConnection(self.logdata) as (conn, cursor):
+            cursor.execute("SELECT kit_status FROM kits WHERE kit_id = %s", (kit_id,))
+            kit_status_id = cursor.fetchone()[0]
+
+            cursor.execute("SELECT status_key FROM kit_statuses WHERE status_id = %s", (kit_status_id,))
+            kit_status = cursor.fetchone()[0]
+
+        return kit_status
+    def get_kit_qrs(self, kit_id: int):
+        """
+        -- logging --
+        Returns a list of tuples containing (qr_id, qr_unique_code) for the kit with the given kit_id.
+        If the kit does not exist, returns False.
+        """
+        if not self.is_kit(kit_id):
+            self.logger.log_message(f"Error: Kit with ID {kit_id} does not exist.")
+            return False
+
+        qr_info = []
+
+        with DBConnection(self.logdata) as (conn, cursor):
+            cursor.execute("SELECT qr_id, qr_unique_code FROM qrs WHERE kit_id = %s", (kit_id,))
+            qr_info_tuples = cursor.fetchall()
+
+        for qr_id, qr_unique_code in qr_info_tuples:
+            qr_info.append((qr_id, bytes(qr_unique_code)))
+
+        return qr_info
+    def get_kit_info(self, kit_id: int):
+        """
+        -- logging --
+        Returns a dictionary containing kit information for the kit with the given kit_id.
+        If the kit does not exist, returns False.
+        """
+        if not self.is_kit(kit_id):
+            self.logger.log_message(f"Error: Kit with ID {kit_id} does not exist.")
+            return False
+
+        kit_info_dict = {}
+
+        with DBConnection(self.logdata) as (conn, cursor):
+            cursor.execute("SELECT kit_unique_code, created_at, updated_at, kit_status FROM kits WHERE kit_id = %s", (kit_id,))
+            kit_data = cursor.fetchone()
+
+            kit_info_dict['kit_unique_code'] = bytes(kit_data[0])
+            kit_info_dict['created_at'] = kit_data[1]
+            kit_info_dict['updated_at'] = kit_data[2]
+
+            cursor.execute("SELECT status_key FROM kit_statuses WHERE status_id = %s", (kit_data[3],))
+            kit_status_key = cursor.fetchone()[0]
+            kit_info_dict['kit_status'] = kit_status_key
+
+            kit_info_dict['qrs'] = self.get_kit_qrs(kit_id)
+
+        return kit_info_dict
+    def get_all_kits(self):
+        """
+        Returns a dictionary where keys are kit_id and values are the result of get_kit_info call for each kit.
+        """
+        all_kits_dict = {}
+
+        with DBConnection(self.logdata) as (conn, cursor):
+            cursor.execute("SELECT kit_id FROM kits")
+            kit_ids = cursor.fetchall()
+
+        for kit_id_tuple in kit_ids:
+            kit_id = kit_id_tuple[0]
+            kit_info = self.get_kit_info(kit_id)
+            all_kits_dict[kit_id] = kit_info
+
+        return all_kits_dict
+
     ################# Insertions #################
     def new_user(self, username:str, password:str):
         """
         -- logging --
+        Returns the user_id if successful, otherwise False.
         """
         if self.is_user(username):
             self.logger.log_message(f"Error: Username '{username}' is already taken.")
@@ -342,7 +452,7 @@ class DBManager:
         return user_id 
     def new_research(self, research_name: str, research_comment: str, username: str, day_start: date):
         """
-        Creates a new research entry in the database.
+        -- logging --
         Returns the research_id if successful, otherwise False.
         """
         if self.is_research(research_name):
@@ -369,36 +479,127 @@ class DBManager:
             conn.commit()
         self.logger.log_message(f"Info : Research #{research_id} '{research_name}' starting on {day_start} created by '{username}'")
         return research_id
-    
-    
+    def new_kit(self, n_qrs: int):
+        """
+        -- logging --
+        Inserts a new kit with `n_qrs` QRs into the database.
+        Returns the kit_id if successful, otherwise False.
+        """
+        kit_unique_code = os.urandom(16)
+        qr_unique_codes = self._generate_qr_bytes(n_qrs, 10)
+        
+        with DBConnection(self.logdata) as (conn, cursor):
+            cursor.execute("""
+                INSERT INTO kits (kit_unique_code, n_qrs)
+                VALUES (%s, %s)
+                RETURNING kit_id
+            """, (kit_unique_code, n_qrs))
+            kit_id = cursor.fetchone()[0]
+
+            for qr_unique_code in qr_unique_codes:
+                cursor.execute("""
+                    INSERT INTO qrs (qr_unique_code, kit_id)
+                    VALUES (%s, %s)
+                """, (qr_unique_code, kit_id))
+            conn.commit()
+        self.logger.log_message(f"Info : Kit #{kit_id} with {n_qrs} QRs has been created")
+        return kit_id
+
+    # def new_sample(self,
+    #     qr_bytes: bytes,
+    #     research_id: int,
+    #     gps: tuple[float, float],
+    #     weather: str = None,
+    #     user_comment: str = None,
+    #     photo: bytes = None
+    # ):
+    #     """
+    #     -- logging --
+    #     Inserts a new sample into the database with the provided information.
+    #     Checks if the research is ongoing, the QR code is valid and not used, the kit is activated, and the user is a volunteer.
+    #     Increments the n_samples_collected of the user by 1 if all conditions are met.
+    #     """
+    #     research_status = self.get_research_status(research_id)
+    #     if not research_status:
+    #         self.logger.log_message(f"Error: Invalid research id #{research_id}.")
+    #         return False
+
+    #     if research_status != "ongoing":
+    #         self.logger.log_message(f"Error: Research #{research_id} is not in 'ongoing' status.")
+    #         return False
+
+    #     qr_status = self.is_qr(qr_bytes)
+    #     if not qr_status:
+    #         self.logger.log_message(f"Error: No such QR in database.")
+    #         return False
+        
+    #     if not qr_status[1]:
+    #         self.logger.log_message(f"Error: QR code is already used.")
+    #         return False
+
+    #     with DBConnection(self.logdata) as (conn, cursor):
+    #         cursor.execute("SELECT kit_id FROM qrs WHERE qr_id = %s AND is_used = false", (qr_id,))
+    #         kit_id = cursor.fetchone()
+    #         if not kit_id:
+    #             self.logger.log_message(f"Error: QR code '{qr_bytes}' is already used or invalid.")
+    #             return False
+
+    #         cursor.execute("SELECT kit_status, user_id FROM kits WHERE kit_id = %s", (kit_id,))
+    #         kit_status, user_id = cursor.fetchone()
+    #         if kit_status != "activated":
+    #             self.logger.log_message(f"Error: Kit associated with QR '{qr_bytes}' is not activated.")
+    #             return False
+
+    #         cursor.execute("SELECT user_status FROM users WHERE user_id = %s", (user_id,))
+    #         user_status = cursor.fetchone()[0]
+    #         if user_status != "volunteer":
+    #             self.logger.log_message(f"Error: User associated with the kit is not a volunteer.")
+    #             return False
+
+    #         # Increment n_samples_collected of the user by 1
+    #         cursor.execute("UPDATE users SET n_samples_collected = n_samples_collected + 1 WHERE user_id = %s", (user_id,))
+
+    #         # Insert the new sample
+    #         cursor.execute("""
+    #             INSERT INTO samples (research_id, qr_id, gps, weather_conditions, user_comment, photo)
+    #             VALUES (%s, %s, %s, %s, %s, %s)
+    #         """, (research_id, qr_id, gps, weather, user_comment, photo))
+
+    #         conn.commit()
+
+    #     self.logger.log_message("Info: New sample inserted successfully.")
+    #     return True
+
+
     ################# Updates #################
     def change_user_status(self, username: str, new_status: str):
         """
         -- logging --
+        returns False if unsuccessfull
         """
         if not self.is_user(username):
             self.logger.log_message(f"Error: Can't change status of a nonexisting user '{username}'.")
             return False
         
-        new_status_query = self.is_status_of("user", new_status)
-        if not new_status_query:
+        new_status_id = self.is_status_of("user", new_status)
+        if not new_status_id:
             self.logger.log_message(f"Error: Status '{new_status}' is not a valid status.")
             return False
-        new_status_id = new_status_query[0]
 
-        current_status = self.get_user_status(username)
-        current_status_id = self.is_status_of("user", current_status)[0]
-
-        if new_status_id == current_status_id:
+        if new_status == self.get_user_status(username):
             # No status change, no logging
             return new_status
 
         with DBConnection(self.logdata) as (conn, cursor):
-            cursor.execute("UPDATE users SET user_status = %s WHERE username = %s", (new_status_id, username))
+            cursor.execute("UPDATE users SET user_status = %s WHERE username = %s", (new_status_id[0], username))
             conn.commit()
         self.logger.log_message(f"Info : User '{username}' changed status to '{new_status}'")
         return new_status
     def change_user_name(self, old_username: str, new_username: str):
+        """
+        -- logging --
+        returns False if unsuccessfull
+        """
         if not self.is_user(old_username):
             self.logger.log_message(f"Error: Can't change username of a nonexisting user '{old_username}'.")
             return False
@@ -408,7 +609,7 @@ class DBManager:
             return old_username
 
         if self.is_user(new_username):
-            self.logger.log_message(f"Error: Can't change username from '{old_username}' to '{new_username}'; name allready taken.")
+            self.logger.log_message(f"Error: Can't change username '{old_username}' to '{new_username}' - the name is taken.")
             return False
 
         if not self._validate_username(new_username):
@@ -418,9 +619,13 @@ class DBManager:
             cursor.execute("UPDATE users SET username = %s WHERE username = %s", (new_username, old_username))
             conn.commit()
             
-        self.logger.log_message(f"Info : User '{old_username}' changed name to '{new_username}'")
+        self.logger.log_message(f"Info : User '{old_username}' changed name to '{new_username}'.")
         return new_username
     def change_user_password(self, username: str, new_password: str):
+        """
+        -- logging --
+        returns False if unsuccessfull
+        """
         if not self.is_user(username):
             self.logger.log_message(f"Error: Can't change password of a nonexisting user '{username}'.")
             return False
@@ -442,6 +647,7 @@ class DBManager:
     def change_research_status(self, research_name: str, new_status: str):
         """
         -- logging --
+        returns False if unsuccessfull
         """
         if not self.is_research(research_name):
             self.logger.log_message(f"Error: Research '{research_name}' does not exist.")
@@ -453,7 +659,7 @@ class DBManager:
             return False
         new_status_id = new_status_query[0]
 
-        current_status = self.get_research_users(research_name)
+        current_status = self.get_research_status(research_name)
         current_status_id = self.is_status_of("research", current_status)[0]
 
         if new_status_id == current_status_id:
@@ -468,7 +674,8 @@ class DBManager:
         return new_status
     def change_research_comment(self, research_name: str, comment: str):
         """
-        -- logging
+        -- logging --
+        returns False if unsuccessfull
         """
         if not self.is_research(research_name):
             self.logger.log_message(f"Error: Research '{research_name}' does not exist.")
@@ -483,6 +690,7 @@ class DBManager:
     def change_research_day_end(self, research_name: str, day_end: date):
         """
         -- logging --
+        returns False if unsuccessfull
         """
         if not self.is_research(research_name):
             self.logger.log_message(f"Error: Research '{research_name}' does not exist.")
@@ -501,3 +709,55 @@ class DBManager:
 
         self.logger.log_message(f"Info : Now '{research_name}' ends on {day_end}")
         return True
+    
+    def change_kit_status(self, kit_id: int, new_status: str):
+        """
+        -- logging --
+        Changes the status of a kit with the given kit_id to the new_status.
+        Returns the new status if successful, otherwise False.
+        """
+        kit_id = str(kit_id)
+        if not self.is_kit(kit_id):
+            self.logger.log_message(f"Error: Kit #{kit_id} does not exist.")
+            return False
+
+        new_status_query = self.is_status_of("kit", new_status)
+        if not new_status_query:
+            self.logger.log_message(f"Error: Status '{new_status}' is not a valid kit status.")
+            return False
+        new_status_id = new_status_query[0]
+
+        current_status = self.get_kit_status(kit_id)
+        current_status_id = self.is_status_of("kit", current_status)[0]
+
+        if new_status_id == current_status_id:
+            # No status change, no logging
+            return new_status
+
+        with DBConnection(self.logdata) as (conn, cursor):
+            cursor.execute("UPDATE kits SET kit_status = %s WHERE kit_id = %s", (new_status_id, kit_id))
+            conn.commit()
+
+        self.logger.log_message(f"Info : Kit #{kit_id} status changed to '{new_status}'")
+        return new_status
+    def change_kit_owner(self, kit_id: int, username: str):
+        """
+        -- logging --
+        Changes the owner of a kit with the given kit_id to the user with the specified username.
+        Returns kit_id if successful, otherwise False.
+        """
+        if not self.is_kit(kit_id):
+            self.logger.log_message(f"Error: Kit with ID {kit_id} does not exist.")
+            return False
+
+        user_id = self.is_user(username)
+        if not user_id:
+            self.logger.log_message(f"Error: User '{username}' does not exist.")
+            return False
+
+        with DBConnection(self.logdata) as (conn, cursor):
+            cursor.execute("UPDATE kits SET user_id = %s WHERE kit_id = %s", (user_id, kit_id))
+            conn.commit()
+
+        self.logger.log_message(f"Info : Owner of Kit #{kit_id} changed to '{username}'")
+        return kit_id
