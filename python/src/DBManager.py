@@ -339,7 +339,7 @@ class DBManager:
         If the kit does not exist, returns False.
         """
         if not self.is_kit(kit_id):
-            self.logger.log_message(f"Error: Kit with ID {kit_id} does not exist.")
+            self.logger.log_message(f"Error: Kit #{kit_id} does not exist.")
             return False
 
         with DBConnection(self.logdata) as (conn, cursor):
@@ -358,7 +358,7 @@ class DBManager:
         """
         qr_info = {}
         if not self.is_kit(kit_id):
-            self.logger.log_message(f"Error: Kit with ID {kit_id} does not exist.")
+            self.logger.log_message(f"Error: Kit #{kit_id} does not exist.")
             return qr_info
 
 
@@ -378,7 +378,7 @@ class DBManager:
         """
         kit_info_dict = {}
         if not self.is_kit(kit_id):
-            self.logger.log_message(f"Error: Kit with ID {kit_id} does not exist.")
+            self.logger.log_message(f"Error: Kit #{kit_id} does not exist.")
             return kit_info_dict
 
         with DBConnection(self.logdata) as (conn, cursor):
@@ -776,7 +776,7 @@ class DBManager:
         Returns kit_id if successful, otherwise False.
         """
         if not self.is_kit(kit_id):
-            self.logger.log_message(f"Error: Kit with ID {kit_id} does not exist.")
+            self.logger.log_message(f"Error: Kit #{kit_id} does not exist.")
             return False
 
         user_id = self.is_user(username)
