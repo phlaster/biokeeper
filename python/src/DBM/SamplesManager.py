@@ -9,21 +9,27 @@ class SamplesManager(AbstractDBManager):
     def count(self, status):
         raise NotImplementedError
 
+    
     def has_status(self, status):
         raise NotImplementedError
 
+    
     def has(self, identifier):
         raise NotImplementedError
 
+    
     def status_of(self, identifier):
         raise NotImplementedError
 
+    
     def get_info(self, identifier):
         raise NotImplementedError
 
+    
     def get_all(self):
         raise NotImplementedError
 
+    
     def new(self,
         qr_bytes: bytes,
         research_name: str,
@@ -86,7 +92,7 @@ class SamplesManager(AbstractDBManager):
             self.logger.log_message(f"Error: Kit associated with QR hasn't been activated.")
             return False
 
-        kit_owner_status = users.status_of(kit_owner["username"])
+        kit_owner_status = users.status_of(kit_owner["user_name"])
         if kit_owner_status not in ['admin', 'volunteer']:
             self.logger.log_message(f"Error: Owner of kit '{kit_owner}' is of status '{kit_owner_status}', which is not enough to publish samples.")
             return False
@@ -103,15 +109,17 @@ class SamplesManager(AbstractDBManager):
             self.logger.log_message(f"Info : QR #{qr_id} is now 'is_used'")
             cursor.execute("UPDATE users SET n_samples_collected = n_samples_collected + 1 WHERE user_id = %s RETURNING n_samples_collected", (kit_owner["user_id"],))
             new_personal_score = cursor.fetchone()[0]
-            self.logger.log_message(f"Info : Personal counter of user '{kit_owner["username"]}' is now {new_personal_score}")
+            self.logger.log_message(f"Info : Personal counter of user '{kit_owner["user_name"]}' is now {new_personal_score}")
             conn.commit()
 
         self.logger.log_message("Info : New sample inserted successfully.")
         return sample_id
 
+    
     def change_status(self, identifier, new_status):
         raise NotImplementedError
 
+    
     def change_sample_details(self, sample_id: int, weather: str = None, user_comment: str = None, photo: bytes = None):
         """
         -- logging --

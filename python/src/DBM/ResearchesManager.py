@@ -9,14 +9,17 @@ class ResearchesManager(AbstractDBManager):
         'all' for all statuses OR
         Currently possible statuses: "pending", "ongoing", "paused", "ended", "cancelled"
         """
-        return self._counter("researches", "research_status", "research_statuses", status)
+        return self._counter("research_statuses", status)
 
+    
     def has_status(self, status):
         return self._is_status_of("research", status)
 
+    
     def has(self, research_name):
         return self._is("research_id", "researches", "research_name", research_name)
 
+    
     def status_of(self, research_name):
         """
         Returns the status key of the research with the given name.
@@ -27,6 +30,7 @@ class ResearchesManager(AbstractDBManager):
             return False
         return self._status_getter("research_status", "researches", "research_name", "research_statuses", research_name)
 
+    
     def get_info(self, research_name: str):
         """
         Returns research information as a dictionary for the given research name.
@@ -60,6 +64,7 @@ class ResearchesManager(AbstractDBManager):
 
         return research_info_dict
 
+    
     def get_all(self):
         """
         Returns a dictionary where the keys are research names and the values are
@@ -77,7 +82,8 @@ class ResearchesManager(AbstractDBManager):
 
         return all_researches_dict 
 
-    def new(self, research_name: str, username: str, day_start: datetime.date, research_comment: str = None):
+    
+    def new(self, research_name: str, user_name: str, day_start: datetime.date, research_comment: str = None):
         """
         -- logging --
         Returns the research_id if successful, otherwise False.
@@ -87,57 +93,34 @@ class ResearchesManager(AbstractDBManager):
             return False
 
         users = UsersManager(self.logdata, logfile=self.logfile)
-        user_id = users.has(username)
+        user_id = users.has(user_name)
         if not user_id:
-            self.logger.log_message(f"Error: Can't assign new research '{research_name}' to a nonexisting user '{username}'.")
+            self.logger.log_message(f"Error: Can't assign new research '{research_name}' to a nonexisting user '{user_name}'.")
             return False
 
-        user_status = users.status_of(username) # Careful here!
+        user_status = users.status_of(user_name) # Careful here!
         if user_status != "admin":
-            self.logger.log_message(f"Error: User '{username}' of status '{user_status}' has no privilege to create researches.")
+            self.logger.log_message(f"Error: User '{user_name}' of status '{user_status}' has no privilege to create researches.")
             return False
 
         with self.db as (conn, cursor):
             # Insert new research
             cursor.execute("""
-                INSERT INTO researches (research_name, research_comment, created_by, day_start)
-                VALUES (%s, %s, %s, %s)
+                INSERT INTO researches (research_name, research_status, research_comment, created_by, day_start)
+                VALUES (%s, 1, %s, %s, %s)
                 RETURNING research_id
             """, (research_name, research_comment, user_id, day_start))
             research_id = cursor.fetchone()[0]
+            cursor.execute("UPDATE research_statuses SET n = n + 1 WHERE status_id = 1")
             conn.commit()
-        self.logger.log_message(f"Info : Research #{research_id} '{research_name}' starting on {day_start} created by '{username}'")
+        self.logger.log_message(f"Info : Research #{research_id} '{research_name}' starting on {day_start} created by '{user_name}'")
         return research_id
 
-    def change_status(self, research_name: str, new_status: str):
-        """
-        -- logging --
-        returns False if unsuccessfull
-        """
-        if not self.has(research_name):
-            self.logger.log_message(f"Error: Research '{research_name}' does not exist.")
-            return False
+    
+    def change_status(self, research_name, new_status):
+        return self._change_status("research_name", "researches", "research_status", "research_statuses", research_name, new_status)
 
-        new_status_query = self.has_status(new_status)
-        if not new_status_query:
-            self.logger.log_message(f"Error: Status '{new_status}' is not a valid research status.")
-            return False
-        new_status_id = new_status_query[0]
-
-        current_status = self.status_of(research_name)
-        current_status_id = self.has_status(current_status)[0]
-
-        if new_status_id == current_status_id:
-            # No status change, no logging
-            return new_status
-
-        with self.db as (conn, cursor):
-            cursor.execute("UPDATE researches SET research_status = %s WHERE research_name = %s", (new_status_id, research_name))
-            conn.commit()
-
-        self.logger.log_message(f"Info : Research '{research_name}' status changed to '{new_status}'")
-        return new_status
-
+    
     def change_comment(self, research_name: str, comment: str):
         """
         -- logging --
@@ -154,6 +137,7 @@ class ResearchesManager(AbstractDBManager):
         self.logger.log_message(f"Info : Updated comment for research '{research_name}'")
         return True
 
+    
     def change_day_end(self, research_name: str, day_end: datetime.date):
         """
         -- logging --

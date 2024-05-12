@@ -10,25 +10,14 @@ class AbstractDBManager(ABC):
         self.logfile = logfile
         self.logger = Logger(logfile)
     
-    def _counter(self, table_name:str, obj_status:str, statuses_table:str, status:str):
+    def _counter(self, table_name:str, status_key:str):
         with self.db as (conn, cursor):
-            if status == "all":
-                cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
+            if status_key == 'all':
+                cursor.execute(f"SELECT SUM(n) FROM {table_name};")
             else:
-                cursor.execute(f"""
-                    SELECT COUNT(*) 
-                    FROM {table_name} 
-                    WHERE {obj_status} IN (
-                        SELECT status_id 
-                        FROM {statuses_table} 
-                        WHERE status_key = %s
-                    )
-                """, (status,))
-            result = cursor.fetchone()
-        if result:
-            return result[0]
-        else:
-            return 0
+                cursor.execute(f"SELECT n FROM {table_name} WHERE status_key = %s;", (status_key,))
+            result = cursor.fetchone()[0]
+        return result
 
     def _is_status_of(self, table_prefix:str, status:str):
         """
@@ -67,7 +56,7 @@ class AbstractDBManager(ABC):
     def _status_getter(self, status_column:str, obj_table:str, identifier_name:str, status_table:str, identifier:str):
         """
         -- logging --
-        if username is incorrect returns False
+        if user_name is incorrect returns False
         """
         with self.db as (conn, cursor):
             cursor.execute(f"SELECT {status_column} FROM {obj_table} WHERE {identifier_name} = %s", (identifier,))
@@ -76,7 +65,41 @@ class AbstractDBManager(ABC):
             status_key = cursor.fetchone()[0]
         return status_key
 
+    def _change_status(self, identifier_name, identifier_table, status_column, statuses_table, identifier, new_status):
+        """
+        -- logging --
+        returns False if unsuccessfull
+        """
+        if not self.has(identifier):
+            if identifier == "kit":
+                self.logger.log_message(f"Error: No such {identifier_name.split('_')[0]} '{identifier}'.")
+            else:
+                self.logger.log_message(f"Error: Kit #{identifier} does not exist.")
+            return False
 
+        new_status_query = self.has_status(new_status)
+        if not new_status_query:
+            self.logger.log_message(f"Error: Status '{new_status}' is not a valid {identifier_name.split('_')[0]} status.")
+            return False
+        new_status_id = new_status_query[0]
+
+        current_status = self.status_of(identifier)
+        current_status_id = self.has_status(current_status)[0]
+
+        if new_status_id == current_status_id:
+            # No status change, no logging
+            return new_status
+
+        with self.db as (conn, cursor):
+            cursor.execute(f"UPDATE {identifier_table} SET {status_column} = %s WHERE {identifier_name} = %s", (new_status_id, identifier))
+            cursor.execute(f"UPDATE {statuses_table} SET n = n - 1 WHERE status_id = %s", (current_status_id,))
+            cursor.execute(f"UPDATE {statuses_table} SET n = n + 1 WHERE status_id = %s", (new_status_id,))
+            conn.commit()
+
+        self.logger.log_message(f"Info : Research '{identifier}' status changed to '{new_status}'")
+        return new_status
+
+    
     @abstractmethod
     def count(self, status):
         pass
@@ -126,6 +149,5 @@ class AbstractDBManager(ABC):
             return {'qr_id': int(result[0]), 'is_used': bool(result[1]), 'kit_id': int(result[2])}
         else:
             return {}
-
 
 

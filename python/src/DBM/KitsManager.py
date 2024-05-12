@@ -7,20 +7,24 @@ class KitsManager(AbstractDBManager):
         return [os.urandom(l) for _ in range(n)]
 
 
+
     def count(self, status):
         """
         Returns number of kits with different statuses.
         'all' for all statuses OR
         Currently possible statuses: "created", "sent", "activated"
         """
-        return self._counter("kits", "kit_status", "kit_statuses", status)
+        return self._counter("kit_statuses", status)
 
+    
     def has_status(self, status):
         return self._is_status_of("kit", status)
 
+    
     def has(self, kit_id):
         return self._is("kit_id", "kits", "kit_id", kit_id)
 
+    
     def status_of(self, kit_id):
         """
         -- logging --
@@ -32,6 +36,7 @@ class KitsManager(AbstractDBManager):
             return False
         return self._status_getter("kit_status", "kits", "kit_id", "kit_statuses", kit_id)
 
+    
     def get_qrs(self, kit_id: int):
         """
         -- logging --
@@ -53,6 +58,7 @@ class KitsManager(AbstractDBManager):
 
         return qr_info
 
+    
     def get_info(self, kit_id: int):
         """
         -- logging --
@@ -78,9 +84,9 @@ class KitsManager(AbstractDBManager):
                 kit_info_dict['kit_status'] = kit_status_key
 
                 if kit_data[4]:  # Check if user_id is not None
-                    cursor.execute("SELECT user_id, username FROM users WHERE user_id = %s", (kit_data[4],))
+                    cursor.execute("SELECT user_id, user_name FROM users WHERE user_id = %s", (kit_data[4],))
                     owner_data = cursor.fetchone()
-                    owner_dict = {'user_id': owner_data[0], 'username': owner_data[1]} if owner_data else None
+                    owner_dict = {'user_id': owner_data[0], 'user_name': owner_data[1]} if owner_data else None
                     kit_info_dict['owner'] = owner_dict
                 else:
                     kit_info_dict['owner'] = None
@@ -89,6 +95,7 @@ class KitsManager(AbstractDBManager):
 
         return kit_info_dict
 
+    
     def get_all(self):
         """
         Returns a dictionary where keys are kit_id and values are the result of get_kit_info call for each kit.
@@ -106,6 +113,7 @@ class KitsManager(AbstractDBManager):
 
         return all_kits_dict
 
+    
     def new(self, n_qrs: int):
         """
         -- logging --
@@ -117,12 +125,12 @@ class KitsManager(AbstractDBManager):
         
         with self.db as (conn, cursor):
             cursor.execute("""
-                INSERT INTO kits (kit_unique_code, n_qrs)
-                VALUES (%s, %s)
+                INSERT INTO kits (kit_unique_code, n_qrs, kit_status)
+                VALUES (%s, %s, 1)
                 RETURNING kit_id
             """, (kit_unique_code, n_qrs))
             kit_id = cursor.fetchone()[0]
-
+            cursor.execute("UPDATE kit_statuses SET n = n + 1 WHERE status_id = 1")
             for qr_unique_code in qr_unique_codes:
                 cursor.execute("""
                     INSERT INTO qrs (qr_unique_code, kit_id)
@@ -132,41 +140,15 @@ class KitsManager(AbstractDBManager):
         self.logger.log_message(f"Info : Kit #{kit_id} with {n_qrs} QRs has been created")
         return kit_id
 
-    def change_status(self, kit_id: int, new_status: str):
+    
+    def change_status(self, kit_id, new_status):
+        return self._change_status("kit_id", "kits", "kit_status", "kit_statuses", kit_id, new_status)
+
+    
+    def change_owner(self, kit_id: int, user_name: str):
         """
         -- logging --
-        Changes the status of a kit with the given kit_id to the new_status.
-        Returns the new status if successful, otherwise False.
-        """
-        kit_id = str(kit_id)
-        if not self.has(kit_id):
-            self.logger.log_message(f"Error: Kit #{kit_id} does not exist.")
-            return False
-
-        new_status_query = self.has_status(new_status)
-        if not new_status_query:
-            self.logger.log_message(f"Error: Status '{new_status}' is not a valid kit status.")
-            return False
-        new_status_id = new_status_query[0]
-
-        current_status = self.status_of(kit_id)
-        current_status_id = self.has_status(current_status)[0]
-
-        if new_status_id == current_status_id:
-            # No status change, no logging
-            return new_status
-
-        with self.db as (conn, cursor):
-            cursor.execute("UPDATE kits SET kit_status = %s WHERE kit_id = %s", (new_status_id, kit_id))
-            conn.commit()
-
-        self.logger.log_message(f"Info : Kit #{kit_id} status changed to '{new_status}'")
-        return new_status
-
-    def change_owner(self, kit_id: int, username: str):
-        """
-        -- logging --
-        Changes the owner of a kit with the given kit_id to the user with the specified username.
+        Changes the owner of a kit with the given kit_id to the user with the specified user_name.
         Returns kit_id if successful, otherwise False.
         """
         if not self.has(kit_id):
@@ -174,14 +156,14 @@ class KitsManager(AbstractDBManager):
             return False
 
         users = UsersManager(self.logdata, logfile=self.logfile)
-        user_id = users.has(username)
+        user_id = users.has(user_name)
         if not user_id:
-            self.logger.log_message(f"Error: User '{username}' does not exist.")
+            self.logger.log_message(f"Error: User '{user_name}' does not exist.")
             return False
 
         with self.db as (conn, cursor):
             cursor.execute("UPDATE kits SET user_id = %s WHERE kit_id = %s", (user_id, kit_id))
             conn.commit()
 
-        self.logger.log_message(f"Info : Owner of Kit #{kit_id} changed to '{username}'")
+        self.logger.log_message(f"Info : Owner of Kit #{kit_id} changed to '{user_name}'")
         return kit_id
