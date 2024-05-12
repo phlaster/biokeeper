@@ -276,11 +276,41 @@ def samples():
     n_collected = DBM.users.get_info(research_user)["n_samples_collected"]
     assert not DBM.kits.get_qr_info(some_qr_bytes)["is_used"]
 
+    n_samples = DBM.samples.count()
+    n_samples_collected = DBM.samples.count("collected")
+    n_samples_sent = DBM.samples.count("sent")
+    n_samples_delivered = DBM.samples.count("delivered")
+    assert n_samples == DBM.samples.count("all")
+    assert n_samples_delivered + n_samples_sent + n_samples_collected == n_samples
+
     sample_id = DBM.samples.new(some_qr_bytes, research_name, datetime.datetime.now(), (2.4, 2.1)) # the PUSH
     assert isinstance(sample_id, int)
     assert DBM.users.get_info(research_user)["n_samples_collected"] == n_collected + 1 == 1
     assert DBM.kits.get_qr_info(some_qr_bytes)["is_used"]
     assert not DBM.samples.new(some_qr_bytes, research_name, datetime.datetime.now(), (2.4, 2.1)) # QR is used
+
+    assert n_samples + 1 == DBM.samples.count("all")
+    assert DBM.samples.count("collected") == n_samples_collected + 1
+
+    assert DBM.samples.has(sample_id)
+    assert not DBM.samples.has(sample_id+1)
+
+    assert DBM.samples.has_status("collected")
+    assert DBM.samples.has_status("sent")
+    assert DBM.samples.has_status("delivered")
+    assert not DBM.samples.has_status("lost")
+
+    assert DBM.samples.status_of(sample_id) == "collected"
+    assert not DBM.samples.change_status(sample_id, "rubbish")
+    assert DBM.samples.status_of(sample_id) == "collected"
+    assert DBM.samples.change_status(sample_id, "sent")
+    assert DBM.samples.status_of(sample_id) == "sent"
+    assert DBM.samples.count("sent") == n_samples_sent + 1
+    assert n_samples + 1 == DBM.samples.count("all")
+
+    print(DBM.samples.get_info(sample_id))
+
+
 
 
 
@@ -300,14 +330,14 @@ passwd_3 = rstr()
 global test_time
 test_time = time()
 try:
-    existing_statuses()
-    new_user()
-    user_info()
-    user_renaming()
-    counting_users()
-    researches()
-    kits()
-    qrcodes()
+    # existing_statuses()
+    # new_user()
+    # user_info()
+    # user_renaming()
+    # counting_users()
+    # researches()
+    # kits()
+    # qrcodes()
     samples()
     print(f"All tests passed in {round(time()-test_time, ndigits=1)} s.")
 except Exception as e:
