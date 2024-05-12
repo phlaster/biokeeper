@@ -37,10 +37,40 @@ class SamplesManager(AbstractDBManager):
     
     def get_info(self, identifier):
         raise NotImplementedError
+    def get_info(self, sample_id: int):
+        """
+        -- logging --
+        Returns a dictionary containing kit information for the kit with the given kit_id.
+        If the kit does not exist, returns empty dict.
+        """
+        sample_info_dict = {}
+        if not self.has(sample_id):
+            self.logger.log_message(f"Error: Sample #{sample_id} does not exist.")
+            return sample_info_dict
+
+        with self.db as (conn, cursor):
+            cursor.execute("SELECT research_id, qr_id, collected_at, uploaded_at, sent_to_lab_at, delivered_to_lab_at, sample_status, gps, weather_conditions, user_comment FROM samples WHERE sample_id = %s", (sample_id,))
+            kit_data = cursor.fetchone()
+
+            if kit_data:
+                sample_info_dict['research_id'] = kit_data[0]
+                sample_info_dict['qr_id'] = kit_data[1]
+                sample_info_dict['collected_at'] = kit_data[2]
+                sample_info_dict['uploaded_at'] = kit_data[3]
+                sample_info_dict['sent_to_lab_at'] = kit_data[4]
+                sample_info_dict['delivered_to_lab_at'] = kit_data[5]
+
+                cursor.execute("SELECT status_key FROM sample_statuses WHERE status_id = %s", (kit_data[6],))
+                kit_status_key = cursor.fetchone()[0]
+                sample_info_dict['sample_status'] = kit_status_key
+                sample_info_dict['gps'] = kit_data[7]
+                sample_info_dict['weather_conditions'] = kit_data[8]
+                sample_info_dict['user_comment'] = kit_data[9]
+        return sample_info_dict
 
     
     def get_all(self):
-        raise NotImplementedError
+        return self._all_getter(self, "sample_id", "samples")
 
     
     def new(self,
@@ -117,7 +147,7 @@ class SamplesManager(AbstractDBManager):
                 RETURNING sample_id
             """, (research_info['research_id'], qr_id, collected_at, str(gps), weather, user_comment, photo))
             sample_id = cursor.fetchone()[0]
-            
+            cursor.execute("UPDATE sample_statuses SET n = n + 1 WHERE status_id = 1")
             cursor.execute("UPDATE qrs SET is_used = true WHERE qr_id = %s", (qr_id,))
             self.logger.log_message(f"Info : QR #{qr_id} is now 'is_used'")
             cursor.execute("UPDATE users SET n_samples_collected = n_samples_collected + 1 WHERE user_id = %s RETURNING n_samples_collected", (kit_owner["user_id"],))
@@ -129,8 +159,8 @@ class SamplesManager(AbstractDBManager):
         return sample_id
 
     
-    def change_status(self, identifier, new_status):
-        raise NotImplementedError
+    def change_status(self, sample_id, new_status):
+        return self._change_status("sample_id", "samples", "sample_status", "sample_statuses", sample_id, new_status)
 
     
     def change_sample_details(self, sample_id: int, weather: str = None, user_comment: str = None, photo: bytes = None):

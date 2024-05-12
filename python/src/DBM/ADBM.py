@@ -99,6 +99,23 @@ class AbstractDBManager(ABC):
         self.logger.log_message(f"Info : Research '{identifier}' status changed to '{new_status}'")
         return new_status
 
+    def _all_getter(self, identifier_name, table_name):
+        """
+        Returns a dictionary where keys are identifiers
+        and values are the result of .get_info call for each identifier.
+        """
+        alls = {}
+
+        with self.db as (conn, cursor):
+            cursor.execute(f"SELECT {identifier_name} FROM {table_name}")
+            all_identifiers = cursor.fetchall()
+
+        for tpl in all_identifiers:
+            obj_id = tpl[0]
+            kit_info = self.get_info(obj_id)
+            alls[obj_id] = kit_info
+
+        return alls
     
     @abstractmethod
     def count(self, status):

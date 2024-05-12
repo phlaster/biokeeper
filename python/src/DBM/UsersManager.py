@@ -99,24 +99,9 @@ class UsersManager(AbstractDBManager):
                 user_info_dict['n_samples_collected'] = user_data[4]
         return user_info_dict
 
-    
+
     def get_all(self):
-        """
-        Returns a dictionary where the keys are user_names and the values are
-        the corresponding user information dictionaries.
-        """
-        all_users_dict = {}
-
-        with self.db as (conn, cursor):
-            cursor.execute("SELECT user_name FROM users")
-            user_names = cursor.fetchall()
-
-        for user_name_tuple in user_names:
-            user_name = user_name_tuple[0]
-            user_info_dict = self.get_info(user_name)
-            all_users_dict[user_name] = user_info_dict
-
-        return all_users_dict
+        return self._all_getter(self, "user_name", "users")
 
     
     def new(self, user_name:str, password:str):

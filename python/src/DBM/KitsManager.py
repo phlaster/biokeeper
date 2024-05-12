@@ -97,21 +97,7 @@ class KitsManager(AbstractDBManager):
 
     
     def get_all(self):
-        """
-        Returns a dictionary where keys are kit_id and values are the result of get_kit_info call for each kit.
-        """
-        all_kits_dict = {}
-
-        with self.db as (conn, cursor):
-            cursor.execute("SELECT kit_id FROM kits")
-            kit_ids = cursor.fetchall()
-
-        for kit_id_tuple in kit_ids:
-            kit_id = kit_id_tuple[0]
-            kit_info = self.get_info(kit_id)
-            all_kits_dict[kit_id] = kit_info
-
-        return all_kits_dict
+        return self._all_getter(self, "kit_id", "kits")
 
     
     def new(self, n_qrs: int):

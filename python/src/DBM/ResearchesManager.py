@@ -64,23 +64,9 @@ class ResearchesManager(AbstractDBManager):
 
         return research_info_dict
 
-    
+
     def get_all(self):
-        """
-        Returns a dictionary where the keys are research names and the values are
-        the corresponding research information dictionaries.
-        """
-        all_researches_dict = {}
-
-        with self.db as (conn, cursor):
-            cursor.execute("SELECT research_name FROM researches")
-            research_names = cursor.fetchall()
-
-        for research_name in research_names:
-            research_info_dict = self.get_info(research_name[0])
-            all_researches_dict[research_name[0]] = research_info_dict
-
-        return all_researches_dict 
+        return self._all_getter(self, "research_name", "researches")
 
     
     def new(self, research_name: str, user_name: str, day_start: datetime.date, research_comment: str = None):
