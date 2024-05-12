@@ -308,8 +308,6 @@ def samples():
     assert DBM.samples.count("sent") == n_samples_sent + 1
     assert n_samples + 1 == DBM.samples.count("all")
 
-    print(DBM.samples.get_info(sample_id))
-
 
 
 
@@ -330,14 +328,14 @@ passwd_3 = rstr()
 global test_time
 test_time = time()
 try:
-    # existing_statuses()
-    # new_user()
-    # user_info()
-    # user_renaming()
-    # counting_users()
-    # researches()
-    # kits()
-    # qrcodes()
+    existing_statuses()
+    new_user()
+    user_info()
+    user_renaming()
+    counting_users()
+    researches()
+    kits()
+    qrcodes()
     samples()
     print(f"All tests passed in {round(time()-test_time, ndigits=1)} s.")
 except Exception as e:
