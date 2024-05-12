@@ -206,3 +206,15 @@ class SamplesManager(AbstractDBManager):
             conn.commit()
             self.logger.log_message(f"Info : Pushed details: {', '.join(logmsg)} for sample #{sample_id}.")
         return True
+
+    def get_photo(self, sample_id):
+        if not self.has(sample_id):
+            self.logger.log_message(f"Error: Sample #{sample_id} does not exist.")
+            return b''
+
+        with self.db as (conn, cursor):
+            cursor.execute("SELECT photo FROM samples WHERE sample_id = %s", (sample_id,))
+            photo = cursor.fetchone()[0]
+        
+        return photo if photo else b''
+
