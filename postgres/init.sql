@@ -130,6 +130,7 @@ CREATE INDEX ON kit_statuses (status_key);
 
 
 
+
 CREATE TABLE qrs (
     qr_id SERIAL PRIMARY KEY,
     qr_unique_code BYTEA NOT NULL,
@@ -141,6 +142,21 @@ CREATE INDEX ON qrs (is_used);
 CREATE INDEX ON qrs (qr_unique_code);
 
 
+
+
+
+
+CREATE TABLE sample_statuses (
+    status_id SERIAL PRIMARY KEY,
+    status_key TEXT NOT NULL,
+    status_info TEXT DEFAULT '',
+    n INT NOT NULL DEFAULT 0
+);
+INSERT INTO sample_statuses (status_key, status_info)
+VALUES 
+    ('collected', 'The sample was collected by the volunteer'),
+    ('sent', 'The sample was sent to the lab'),
+    ('delivered', 'The sample was delivered to the lab');
 CREATE TABLE samples (
     sample_id SERIAL PRIMARY KEY,
     research_id INT NOT NULL,
@@ -148,8 +164,11 @@ CREATE TABLE samples (
     qr_id INT NOT NULL,
     FOREIGN KEY (qr_id) REFERENCES qrs(qr_id),
     collected_at TIMESTAMP NOT NULL,
-    sent_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    in_lab_at TIMESTAMP,
+    sample_status INT NOT NULL DEFAULT 1,
+    FOREIGN KEY (sample_status) REFERENCES sample_statuses(status_id),
+    uploaded_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    sent_to_lab_at TIMESTAMP,
+    delivered_to_lab_at TIMESTAMP,
     gps POINT,
     weather_conditions TEXT,
     user_comment TEXT,
@@ -158,6 +177,9 @@ CREATE TABLE samples (
 CREATE INDEX ON samples (research_id);
 CREATE INDEX ON samples (collected_at);
 CREATE INDEX ON samples (qr_id);
+
+
+
 
 
 
