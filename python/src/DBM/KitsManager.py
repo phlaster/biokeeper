@@ -33,7 +33,7 @@ class KitsManager(AbstractDBManager):
         """
         if not self.has(kit_id):
             self.logger.log_message(f"Error: Kit #{kit_id} does not exist.")
-            return False
+            return ""
         return self._status_getter("kit_status", "kits", "kit_id", "kit_statuses", kit_id)
 
     

@@ -67,7 +67,7 @@ class UsersManager(AbstractDBManager):
         """
         if not self.has(user_name):
             self.logger.log_message(f"Error: Attempt to check status of an nonexisting user '{user_name}'.")
-            return False
+            return ""
         return self._status_getter("user_status", "users", "user_name", "user_statuses", user_name)
 
     

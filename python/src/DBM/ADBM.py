@@ -38,11 +38,11 @@ class AbstractDBManager(ABC):
                 result = cursor.fetchone()
             except Exception as e:
                 self.logger.log_message(f"Error: {e}".split("\n")[0])
-                return False
+                return ()
         if result:
             return result
         else:
-            return False
+            return ()
 
     def _is(self, identifier_id:str, table:str, column:str, identifier:str):
         """
@@ -51,7 +51,7 @@ class AbstractDBManager(ABC):
         with DBConnection(self.logdata) as (conn, cursor):
             cursor.execute(f"SELECT {identifier_id} FROM {table} WHERE {column} = %s", (identifier,))
             result = cursor.fetchone()
-        return result[0] if result is not None else False
+        return result[0] if result is not None else 0
 
     def _status_getter(self, status_column:str, obj_table:str, identifier_name:str, status_table:str, identifier:str):
         """
@@ -75,12 +75,12 @@ class AbstractDBManager(ABC):
                 self.logger.log_message(f"Error: No such {identifier_name.split('_')[0]} '{identifier}'.")
             else:
                 self.logger.log_message(f"Error: Kit #{identifier} does not exist.")
-            return False
+            return ""
 
         new_status_query = self.has_status(new_status)
         if not new_status_query:
             self.logger.log_message(f"Error: Status '{new_status}' is not a valid {identifier_name.split('_')[0]} status.")
-            return False
+            return ""
         new_status_id = new_status_query[0]
 
         current_status = self.status_of(identifier)

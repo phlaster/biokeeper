@@ -27,7 +27,7 @@ class ResearchesManager(AbstractDBManager):
         """
         if not self.has(research_name):
             self.logger.log_message(f"Error: Research '{research_name}' does not exist.")
-            return False
+            return ""
         return self._status_getter("research_status", "researches", "research_name", "research_statuses", research_name)
 
     
