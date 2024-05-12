@@ -6,20 +6,33 @@ from ResearchesManager import ResearchesManager
 import datetime
 
 class SamplesManager(AbstractDBManager):
-    def count(self, status):
-        raise NotImplementedError
+    def count(self, status:str="all"):
+        """
+        Returns number of researches with different statuses.
+        'all' for all statuses OR
+        Currently possible statuses: "collected", "sent", "delivered"
+        """
+        return self._counter("sample_statuses", status)
 
     
     def has_status(self, status):
-        raise NotImplementedError
+        return self._is_status_of("sample", status)
 
     
-    def has(self, identifier):
-        raise NotImplementedError
+    def has(self, sample_id):
+        return self._is("sample_id", "samples", "sample_id", sample_id)
 
     
-    def status_of(self, identifier):
-        raise NotImplementedError
+    def status_of(self, sample_id):
+        """
+        -- logging --
+        Returns the status of a kit with the given sample_id.
+        If the kit does not exist, returns False.
+        """
+        if not self.has(sample_id):
+            self.logger.log_message(f"Error: Sample #{sample_id} does not exist.")
+            return ""
+        return self._status_getter("sample_status", "samples", "sample_id", "sample_statuses", sample_id)
 
     
     def get_info(self, identifier):
