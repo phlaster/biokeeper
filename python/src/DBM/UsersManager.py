@@ -101,7 +101,7 @@ class UsersManager(AbstractDBManager):
 
 
     def get_all(self):
-        return self._all_getter(self, "user_name", "users")
+        return self._all_getter("user_name", "users")
 
     
     def new(self, user_name:str, password:str):

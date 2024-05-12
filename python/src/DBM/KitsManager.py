@@ -97,7 +97,7 @@ class KitsManager(AbstractDBManager):
 
     
     def get_all(self):
-        return self._all_getter(self, "kit_id", "kits")
+        return self._all_getter("kit_id", "kits")
 
     
     def new(self, n_qrs: int):

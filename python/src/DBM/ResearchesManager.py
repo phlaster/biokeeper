@@ -66,7 +66,7 @@ class ResearchesManager(AbstractDBManager):
 
 
     def get_all(self):
-        return self._all_getter(self, "research_name", "researches")
+        return self._all_getter("research_name", "researches")
 
     
     def new(self, research_name: str, user_name: str, day_start: datetime.date, research_comment: str = None):
