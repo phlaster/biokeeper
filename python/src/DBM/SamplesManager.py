@@ -34,9 +34,7 @@ class SamplesManager(AbstractDBManager):
             return ""
         return self._status_getter("sample_status", "samples", "sample_id", "sample_statuses", sample_id)
 
-    
-    def get_info(self, identifier):
-        raise NotImplementedError
+
     def get_info(self, sample_id: int):
         """
         -- logging --
