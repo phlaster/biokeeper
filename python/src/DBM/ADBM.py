@@ -39,10 +39,12 @@ class AbstractDBManager(ABC):
             except Exception as e:
                 self.logger.log_message(f"Error: {e}".split("\n")[0])
                 return ()
-        if result:
-            return result
-        else:
-            return ()
+        
+        return result if result else ()
+        # if result:
+        #     return result
+        # else:
+        #     return ()
 
     def _is(self, identifier_id:str, table:str, column:str, identifier:str):
         """
@@ -51,7 +53,7 @@ class AbstractDBManager(ABC):
         with DBConnection(self.logdata) as (conn, cursor):
             cursor.execute(f"SELECT {identifier_id} FROM {table} WHERE {column} = %s", (identifier,))
             result = cursor.fetchone()
-        return result[0] if result is not None else 0
+        return result[0] if result else 0
 
     def _status_getter(self, status_column:str, obj_table:str, identifier_name:str, status_table:str, identifier:str):
         """
@@ -162,9 +164,7 @@ class AbstractDBManager(ABC):
             cursor.execute("SELECT qr_id, is_used, kit_id FROM qrs WHERE qr_unique_code = %s", (qr_bytes,))
             result = cursor.fetchone()
 
-        if result:
-            return {'qr_id': int(result[0]), 'is_used': bool(result[1]), 'kit_id': int(result[2])}
-        else:
-            return {}
+        return {'qr_id': int(result[0]), 'is_used': bool(result[1]), 'kit_id': int(result[2])} if result else {}
+
 
 
