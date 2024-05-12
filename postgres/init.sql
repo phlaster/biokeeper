@@ -6,14 +6,15 @@ BEGIN
     RETURN NEW;
 END;
 $$
-LANGUAGE plpgsql;
+ LANGUAGE plpgsql;
 
 
 -------------------------- USERS ------------------------
 CREATE TABLE user_statuses (
     status_id SERIAL PRIMARY KEY,
     status_key TEXT NOT NULL,
-    status_info TEXT DEFAULT ''
+    status_info TEXT DEFAULT '',
+    n INT NOT NULL DEFAULT 0
 );
 INSERT INTO user_statuses (status_key, status_info)
 VALUES 
@@ -22,7 +23,7 @@ VALUES
     ('observer', 'Default status for new users');
 CREATE TABLE users (
     user_id SERIAL PRIMARY KEY,
-    username TEXT NOT NULL,
+    user_name TEXT NOT NULL,
     user_status INT NOT NULL DEFAULT 3,
     FOREIGN KEY (user_status) REFERENCES user_statuses(status_id),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -31,11 +32,14 @@ CREATE TABLE users (
     password_salt BYTEA NOT NULL,
     n_samples_collected INT NOT NULL DEFAULT 0
 );
+-- Autoupdating `updated_at`
 CREATE TRIGGER autoupdate_users
 BEFORE INSERT OR UPDATE ON users
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at();
-CREATE INDEX ON users (username);
+
+
+CREATE INDEX ON users (user_name);
 CREATE INDEX ON users (user_status);
 CREATE INDEX ON user_statuses (status_id);
 -----------------------------------------------------
@@ -46,7 +50,8 @@ CREATE INDEX ON user_statuses (status_id);
 CREATE TABLE research_statuses (
     status_id SERIAL PRIMARY KEY,
     status_key TEXT NOT NULL,
-    status_info TEXT DEFAULT ''
+    status_info TEXT DEFAULT '',
+    n INT NOT NULL DEFAULT 0
 );
 INSERT INTO research_statuses (status_key, status_info)
 VALUES 
@@ -69,10 +74,14 @@ CREATE TABLE researches (
     day_end DATE,
     n_samples INT NOT NULL DEFAULT 0
 );
+-- Autoupdating `updated_at`
 CREATE TRIGGER autoupdate_researches
 BEFORE INSERT OR UPDATE ON researches
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at();
+
+
+
 CREATE INDEX ON researches (research_status);
 CREATE INDEX ON researches (research_name);
 CREATE INDEX ON researches (created_by);
@@ -87,7 +96,8 @@ CREATE INDEX ON research_statuses (status_key);
 CREATE TABLE kit_statuses (
     status_id SERIAL PRIMARY KEY,
     status_key TEXT NOT NULL,
-    status_info TEXT DEFAULT ''
+    status_info TEXT DEFAULT '',
+    n INT NOT NULL DEFAULT 0
 );
 INSERT INTO kit_statuses (status_key, status_info)
 VALUES 
@@ -105,10 +115,13 @@ CREATE TABLE kits (
     user_id INT,
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
+-- Autoupdating `updated_at`
 CREATE TRIGGER autoupdate_kits
 BEFORE INSERT OR UPDATE ON kits
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at();
+
+
 CREATE INDEX ON kits (user_id);
 CREATE INDEX ON kits (user_id);
 CREATE INDEX ON kits (kit_unique_code);
