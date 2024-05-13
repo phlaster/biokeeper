@@ -1,10 +1,28 @@
-import sys
-sys.path.insert(1, './python/src/DBM')
-from UsersManager import UsersManager
-from KitsManager import KitsManager
-from ResearchesManager import ResearchesManager
-from SamplesManager import SamplesManager
+
+from DBM.UsersManager import UsersManager
+from DBM.KitsManager import KitsManager
+from DBM.ResearchesManager import ResearchesManager
+from DBM.SamplesManager import SamplesManager
 from Logger import Logger
+
+from pathlib import Path
+
+def in_docker():
+    cgroup = Path('/proc/self/cgroup')
+    return Path('/.dockerenv').is_file() or cgroup.is_file() and 'docker' in cgroup.read_text()
+
+# Specified in docker-compose.yml
+# Hope no collisions will emerge ^^>
+POSTGRES_DOCKER_IP = "172.25.0.10"
+
+LOGDATA = {
+    "db_name" : "postgres",
+    "db_user" : "postgres",
+    "db_pass" : "root",
+    "db_port" : 5432,
+    "db_host" : "db_postgres" if in_docker() else POSTGRES_DOCKER_IP
+}
+
 
 class DBManager:
     """
