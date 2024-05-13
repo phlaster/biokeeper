@@ -136,7 +136,7 @@ CREATE TABLE qrs (
     qr_unique_code BYTEA NOT NULL,
     kit_id INT NOT NULL,
     FOREIGN KEY (kit_id) REFERENCES kits(kit_id),
-    is_used BOOLEAN DEFAULT false
+    is_used BOOLEAN NOT NULL DEFAULT false
 );
 CREATE INDEX ON qrs (is_used);
 CREATE INDEX ON qrs (qr_unique_code);
