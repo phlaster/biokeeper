@@ -5,18 +5,13 @@ import traceback
 import datetime
 from time import time
 
-sys.path.insert(1, './python/src')
-sys.path.insert(1, './python/src/DBM')
-from db_connection import DB_LOGDATA as logdata
-from DBM import DBManager
-# from UsersManager import UsersManager
-# from KitsManager import KitsManager
-# from ResearchesManager import ResearchesManager
-# from SamplesManager import SamplesManager
+import sys
+sys.path.append('python/src')
+from DBManager import DBManager, LOGDATA
 
+rstr = lambda k=10: ''.join(random.choices(string.ascii_uppercase + string.digits, k=k))
 
-# Existing statuses
-def existing_statuses():
+def existing_statuses(DBM):
     assert DBM.users.has_status("admin")
     assert DBM.users.has_status("volunteer")
     assert DBM.users.has_status("observer")
@@ -34,42 +29,67 @@ def existing_statuses():
     assert DBM.researches.has_status('cancelled')
     assert not DBM.researches.has_status("wrongstatus")
 
-def new_user():
-    # Creation
-    global user_1_id
-    user_1_id = DBM.users.new(user_name_1, passwd_1)
-    assert type(user_1_id) == int
-    assert DBM.users.has(user_name_1)
+    assert DBM.samples.has_status("collected")
+    assert DBM.samples.has_status("sent")
+    assert DBM.samples.has_status("delivered")
+    assert not DBM.samples.has_status("wrongstatus")
 
-    # Password match
-    assert DBM.users.password_match(user_name_1, passwd_1)
-    assert not DBM.users.password_match(user_name_1, rstr(11))
+def new_user(DBM):
+    username = rstr()
+    
+    DBM
+    assert not DBM.users.has(username)
+    n_users = DBM.users.count("all")
+    n_admins = DBM.users.count("admin")
+    n_volunteers = DBM.users.count("volunteer")
+    n_observers = DBM.users.count("observer")
+    assert DBM.users.count() == n_users == n_admins + n_volunteers + n_observers
+
+    # Counting
+    user_1_id = DBM.users.new(username, rstr())
+    assert isinstance(user_1_id, int)
+    assert DBM.users.has(username)
+    assert DBM.users.count() == n_users + 1
+    assert DBM.users.count("observer") == n_observers + 1
 
     # Status checks
-    assert DBM.users.status_of(user_name_1) == "observer"
-    assert not DBM.users.change_status(user_name_1, "wrongstatus")
-    assert DBM.users.change_status(user_name_1, "admin") == "admin"
-    assert DBM.users.status_of(user_name_1) == "admin"
+    assert DBM.users.status_of(username) == "observer"
+    assert not DBM.users.change_status(username, "wrongstatus")
+    assert DBM.users.count("observer") == n_observers + 1
+    assert DBM.users.change_status(username, "admin") == "admin"
+    assert DBM.users.count("observer") == n_observers
+    assert DBM.users.count("admin") == n_admins + 1
+    assert DBM.users.status_of(username) == "admin"
+    
+def user_password_validation(DBM):
+    assert not DBM.users._validate_password("", "username")
+    assert not DBM.users._validate_password("123", "username")
+    assert DBM.users._validate_password("12345", "username")
 
-def user_info():
-    # Getting user info
-    global user_1_info
-    user_1_info = DBM.users.get_info(user_name_1)
-    assert type(user_1_info) == dict
-    assert user_1_info["created_at"] < user_1_info["updated_at"]
-    assert user_1_info["n_samples_collected"] == 0
-    assert user_1_info["user_status"] == DBM.users.status_of(user_name_1)
-    assert user_1_info["user_id"] >= 1
-    assert DBM.users.get_all()[user_name_1] == user_1_info
-    assert DBM.users.count() == len(DBM.users.get_all())
-    assert DBM.users.get_info(rstr()) == {}
+    username = rstr()
+    password = rstr()
+    DBM.users.new(username, password)
+    # Password match
+    assert not DBM.users.password_match(username, rstr())
+    assert not DBM.users.password_match(username, "")
+    assert not DBM.users.password_match(username, username)
+    assert not DBM.users.password_match(password, password)
+    assert DBM.users.password_match(username, password)
 
-def user_renaming():
+def user_renaming(DBM):
     # Changing user_name
-    assert DBM.users.change_name(user_name_1, user_name_2) == user_name_2
+    user_name_1 = rstr()
+    user_name_2 = rstr()
+    passwd_1 = rstr()
+
+    DBM.users.new(user_name_1, passwd_1)
+    user_1_info = DBM.users.get_info(user_name_1)
+
+    assert DBM.users.rename(user_name_1, user_name_2) == user_name_2
     assert not DBM.users.has(user_name_1)
     assert DBM.users.has(user_name_2)
-    global user_2_info
+    assert not DBM.users.has(user_name_1)
+
     user_2_info = DBM.users.get_info(user_name_2)
     shared_items = {k: user_1_info[k] for k in user_1_info if k in user_2_info and user_1_info[k] == user_2_info[k]}
     assert len(user_2_info) - len(shared_items) == 1
@@ -78,58 +98,31 @@ def user_renaming():
 
     # Password match after renaming
     assert DBM.users.password_match(user_name_2, passwd_1)
-    assert not DBM.users.password_match(user_name_2, rstr(11))
+    assert not DBM.users.password_match(user_name_2, rstr())
 
 
     # Password match after renaming
     assert DBM.users.password_match(user_name_2, passwd_1)
-    assert not DBM.users.password_match(user_name_2, rstr(11))
+    assert not DBM.users.password_match(user_name_2, rstr())
 
-def counting_users():
-    # Counting
-    assert DBM.users.count() == DBM.users.count("all")
-    n_all_users = DBM.users.count()
-    assert n_all_users > 0
-    n_admins = DBM.users.count("admin")
-    assert n_admins >= 1
-    n_volunteers = DBM.users.count("volunteer")
-    assert n_volunteers >= 0
-    n_observers = DBM.users.count("observer")
-    assert n_volunteers >= 0
-    assert n_admins + n_volunteers + n_observers == n_all_users
+def user_2_info(DBM):
+    username = rstr()
+    new_name = rstr()
 
-    # New user added
-    user_3_id = DBM.users.new(user_name_3, passwd_3)
-    assert not user_1_id == user_3_id
-    assert DBM.users.has(user_name_3)
-    assert not DBM.users.has(user_name_3) == DBM.users.has(user_name_1)
+    DBM.users.new(username, rstr())
+    DBM.users.change_status(username, 'volunteer')
+    user_info = DBM.users.get_info(username)
+    assert isinstance(user_info, dict)
 
-    # Old passwords to new user
-    assert DBM.users.password_match(user_name_3, passwd_3)
-    assert not DBM.users.password_match(user_name_3, passwd_1)
-    assert not DBM.users.password_match(user_name_1, passwd_1)
-    assert not DBM.users.password_match(user_name_2, passwd_3)
+    assert user_info["created_at"] < user_info["updated_at"]
+    assert user_info["n_samples_collected"] == 0
+    assert user_info["user_status"] == DBM.users.status_of(username) == "volunteer"
+    assert user_info["user_id"] >= 1
+    assert DBM.users.get_all()[username] == user_info
+    assert DBM.users.count() == len(DBM.users.get_all())
+    assert DBM.users.get_info(rstr()) == {}
 
-    # Counting after user added
-    assert n_all_users + 1 == DBM.users.count() == DBM.users.count("all")
-    assert n_observers + 1 == DBM.users.count("observer")
-    assert n_volunteers == DBM.users.count("volunteer")
-    assert n_admins == DBM.users.count("admin")
-
-    # Counting after changing status
-    assert DBM.users.change_status(user_name_3, "volunteer") == "volunteer"
-    assert n_observers == DBM.users.count("observer")
-    assert n_volunteers + 1 == DBM.users.count("volunteer")
-    assert n_admins == DBM.users.count("admin")
-
-    # Counting after changing user_name
-    assert not DBM.users.change_name(user_name_3, user_name_2) # already taken
-    assert DBM.users.change_name(user_name_3, user_name_1) # was free after ranaming
-    assert n_observers == DBM.users.count("observer")
-    assert n_volunteers + 1 == DBM.users.count("volunteer")
-    assert n_admins == DBM.users.count("admin")
-
-def researches():
+def researches(DBM):
     research_user = rstr()
     research_user_id = DBM.users.new(research_user, rstr())
     assert DBM.users.status_of(research_user) == "observer"
@@ -193,7 +186,7 @@ def researches():
     assert research_updated_info["day_end"] == good_day_end
     assert research_updated_info["research_comment"] == random_comment
 
-def kits():
+def kits(DBM):
     # Creating
     n_qrs = 10
     kit_id = DBM.kits.new(n_qrs)
@@ -241,7 +234,7 @@ def kits():
     assert DBM.kits.change_owner(kit_id, owner_name) == kit_id
     assert DBM.kits.get_info(kit_id)['owner'] == {'user_id': owner_id, 'user_name': owner_name}
 
-def qrcodes():
+def qrcodes(DBM):
     new_kit = DBM.kits.new(10)
     qrs = DBM.kits.get_qrs(new_kit)
     assert isinstance(qrs, dict)
@@ -251,8 +244,7 @@ def qrcodes():
         assert not DBM.kits.get_qr_info(binary)['is_used']
         assert DBM.kits.get_qr_info(binary)['kit_id'] == new_kit
 
-
-def samples():
+def samples(DBM):
     assert not DBM.samples.new(r'123141143', rstr(), datetime.datetime.now(), (2.4, 2.1))
 
     research_user = rstr()
@@ -308,42 +300,46 @@ def samples():
     assert DBM.samples.count("sent") == n_samples_sent + 1
     assert n_samples + 1 == DBM.samples.count("all")
 
+def dispatch_testing(DBM):
+    username = rstr()
+    passwd = rstr()
+    user_id = DBM.users.new(username, passwd)
+
+    assert user_id == DBM.users.has(username)
+    assert username == DBM.users.has(user_id)
+
+    assert DBM.users.password_match(username, passwd)
+    assert DBM.users.password_match(user_id, passwd)
 
 
+def main():
+    logfile="test_strange.log"
+    DBM = DBManager(LOGDATA, logfile)
+    DBM.logger.clear_logs()
+    DBM.logger.log_message("Info : Test started!")
+    test_time = time()
 
+    try:
+        existing_statuses(DBM)
+        new_user(DBM)
+        user_password_validation(DBM)
+        user_2_info(DBM)
+        user_renaming(DBM)
+        researches(DBM)
+        kits(DBM)
+        qrcodes(DBM)
+        samples(DBM)
+        dispatch_testing(DBM)
+        print(f"All tests passed in {round(time()-test_time, ndigits=1)} s.")
+    except Exception as e:
+        _, _, var = sys.exc_info()
+        traceback.print_tb(var)
+        tb_info = traceback.extract_tb(var)
+        filename, line_number, _, text = tb_info[-1]
+        DBM.logger.log_message(f"An error occurred on line {line_number} in file {filename} in statement {text}")
+        raise e
+    finally:
+        DBM.logger.log_message(f"Info : Test ended in {round(time()-test_time, ndigits=1)} s.")
 
-
-logfile="test_strange.log"
-DBM = DBManager(logdata, logfile)
-DBM.logger.clear_logs()
-DBM.logger.log_message("Info : Test started!")
-
-rstr = lambda k=10: ''.join(random.choices(string.ascii_uppercase + string.digits, k=k))
-user_name_1 = rstr()
-passwd_1 = rstr()
-user_name_2 = rstr()
-user_name_3 = rstr()
-passwd_3 = rstr()
-
-global test_time
-test_time = time()
-try:
-    existing_statuses()
-    new_user()
-    user_info()
-    user_renaming()
-    counting_users()
-    researches()
-    kits()
-    qrcodes()
-    samples()
-    print(f"All tests passed in {round(time()-test_time, ndigits=1)} s.")
-except Exception as e:
-    _, _, var = sys.exc_info()
-    traceback.print_tb(var)
-    tb_info = traceback.extract_tb(var)
-    filename, line_number, _, text = tb_info[-1]
-    DBM.logger.log_message(f"An error occurred on line {line_number} in file {filename} in statement {text}")
-    raise e
-finally:
-    DBM.logger.log_message(f"Info : Test ended in {round(time()-test_time, ndigits=1)} s.")
+if __name__ == "__main__":
+    main()
