@@ -68,7 +68,7 @@ class SamplesManager(AbstractDBManager):
 
     
     def get_all(self):
-        return self._all_getter(self, "sample_id", "samples")
+        return self._all_getter("sample_id", "samples")
 
     
     def new(self,
@@ -150,7 +150,7 @@ class SamplesManager(AbstractDBManager):
             self.logger.log_message(f"Info : QR #{qr_id} is now 'is_used'")
             cursor.execute("UPDATE users SET n_samples_collected = n_samples_collected + 1 WHERE user_id = %s RETURNING n_samples_collected", (kit_owner["user_id"],))
             new_personal_score = cursor.fetchone()[0]
-            self.logger.log_message(f"Info : Personal counter of user '{kit_owner["user_name"]}' is now {new_personal_score}")
+            self.logger.log_message(f"Info : Personal counter of user '{kit_owner['user_name']}' is now {new_personal_score}")
             conn.commit()
 
         self.logger.log_message("Info : New sample inserted successfully.")
