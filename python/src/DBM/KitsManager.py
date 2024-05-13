@@ -1,5 +1,5 @@
-from ADBM import AbstractDBManager
-from UsersManager import UsersManager
+from DBM.ADBM import AbstractDBManager
+from DBM.UsersManager import UsersManager
 import os
 
 class KitsManager(AbstractDBManager):

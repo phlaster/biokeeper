@@ -1,6 +1,6 @@
 import psycopg2
 
-# object that supports the context manager protocol (with ... as ...:)
+# Implementing context manager protocol (with ... as ...:)
 class DBConnection:
     def __init__(self, logdata):
         self.logdata = logdata

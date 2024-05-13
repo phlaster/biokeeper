@@ -1,4 +1,4 @@
-from ADBM import AbstractDBManager
+from DBM.ADBM import AbstractDBManager
 import hashlib
 import os
 

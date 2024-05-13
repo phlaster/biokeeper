@@ -1,7 +1,7 @@
-from ADBM import AbstractDBManager
-from UsersManager import UsersManager
-from KitsManager import KitsManager
-from ResearchesManager import ResearchesManager
+from DBM.ADBM import AbstractDBManager
+from DBM.UsersManager import UsersManager
+from DBM.KitsManager import KitsManager
+from DBM.ResearchesManager import ResearchesManager
 
 import datetime
 

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from DBConnection import DBConnection
+from DBM.DBConnection import DBConnection
 from Logger import Logger
 
 class AbstractDBManager(ABC):
