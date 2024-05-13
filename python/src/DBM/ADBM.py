@@ -41,10 +41,6 @@ class AbstractDBManager(ABC):
                 return ()
         
         return result if result else ()
-        # if result:
-        #     return result
-        # else:
-        #     return ()
 
     def _is(self, identifier_id:str, table:str, column:str, identifier:str):
         """
