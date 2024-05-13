@@ -1,6 +1,8 @@
 
 from fastapi.routing import APIRouter
 from db_manager import DBM
+from fastapi import Body
+from typing import Any
 
 router = APIRouter()
 
@@ -24,7 +26,16 @@ def get_user_status(user_name):
     return DBM.users.status_of(user_name)
 
 @router.post('/users')
-def create_user(user_name, password):
+def create_user(
+    payload : Any = Body(None)
+):
+    try:
+        print(payload['user_name'])
+        print(payload['password'])
+        user_name = payload['user_name']
+        password = payload['password']
+    except:
+        pass
     return DBM.users.new(user_name, password)
 
 @router.get('/users/{user_name}/score')
