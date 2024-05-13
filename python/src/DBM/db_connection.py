@@ -12,47 +12,6 @@ def is_docker():
     return Path('/.dockerenv').is_file() or cgroup.is_file() and 'docker' in cgroup.read_text()
 
 
-def in_db(db_logdata, qr) -> bool:
-    with DBConnection(db_logdata) as (connection, cursor):
-        cursor.execute(f"SELECT qr_text FROM generated_qrs WHERE qr_text='{qr}'")
-        return cursor.fetchone() is not None
-
-
-def is_used(db_logdata, qr) -> bool:
-    with DBConnection(db_logdata) as (connection, cursor):
-        cursor.execute(f"SELECT qr_id FROM generated_qrs WHERE qr_text='{qr}'")
-        qr_id = cursor.fetchone()[0]
-        cursor.execute(f"SELECT qr_id FROM collected_samples WHERE qr_id={qr_id}")
-        return cursor.fetchone() is not None
-
-
-def is_expired(db_logdata, qr) -> bool:
-    with DBConnection(db_logdata) as (connection, cursor):
-        cursor.execute(f"SELECT research_id FROM generated_qrs WHERE qr_text='{qr}'")
-        research_id = cursor.fetchone()[0]
-        cursor.execute(f"SELECT day_end FROM researches WHERE research_id={research_id}")
-        date_end = cursor.fetchone()[0]
-        return date_end < date.today()
-
-
-def push_request(db_logdata, request) -> None:
-    qr, req_body = request[:16], request[17:].split('&')
-    temperature = round(float(req_body[0]))
-    location = req_body[1].strip('/')
-
-    with DBConnection(db_logdata) as (connection, cursor):
-        cursor.execute(f"SELECT qr_id FROM generated_qrs WHERE qr_text='{qr}'")
-        qr_id = cursor.fetchone()[0]
-
-        cursor.execute("""
-            INSERT INTO collected_samples (qr_id, date, time, temperature, gps)
-            VALUES (%s, %s, %s, %s, POINT(%s));
-            """,
-            (qr_id, date.today(), datetime.datetime.now(), temperature, location)
-        )
-        connection.commit()
-
-
 """
 Code below checks, if the server is being stratred inside
 docker container or outside and in either case it deduces
