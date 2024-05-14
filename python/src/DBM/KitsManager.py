@@ -8,7 +8,7 @@ class KitsManager(AbstractDBManager):
 
 
 
-    def count(self, status):
+    def count(self, status: str = "all"):
         """
         Returns number of kits with different statuses.
         'all' for all statuses OR
@@ -54,7 +54,7 @@ class KitsManager(AbstractDBManager):
             qr_info_tuples = cursor.fetchall()
 
         for qr_id, qr_unique_code in qr_info_tuples:
-            qr_info[qr_id] = bytes(qr_unique_code)
+            qr_info[qr_id] = bytes(qr_unique_code).hex()
 
         return qr_info
 
