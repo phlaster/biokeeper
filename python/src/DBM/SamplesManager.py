@@ -6,6 +6,16 @@ from DBM.ResearchesManager import ResearchesManager
 import datetime
 
 class SamplesManager(AbstractDBManager):
+    def _update_sample(self, sample_id: int, column_name: str, value: Union[str, bytes]):
+        if not self.has(sample_id):
+            self.logger.log_message(f"Error: Sample #{sample_id} does not exist.")
+            return False
+        with self.db as (conn, cursor):
+            cursor.execute(f"UPDATE samples SET {column_name} = %s WHERE sample_id = %s", (value, sample_id,))
+            conn.commit()
+        self.logger.log_message(f"Info : Sample #{sample_id} was updated at {column_name}.")
+        return True
+
     def count(self, status:str="all"):
         """
         Returns number of researches with different statuses.
@@ -159,55 +169,26 @@ class SamplesManager(AbstractDBManager):
     
     def change_status(self, sample_id, new_status):
         return self._change_status("sample_id", "samples", "sample_status", "sample_statuses", sample_id, new_status)
+        
+    @multimethod
+    def push_weather(self, sample_id: int, weather: str):
+        return self._update_sample(sample_id, column_name="weather", value=weather)
 
+    @multimethod
+    def push_comment(self, sample_id: int, comment: str):
+        return self._update_sample(sample_id, column_name="user_comment", value=comment)
     
-    def change_sample_details(self, sample_id: int, weather: str = None, user_comment: str = None, photo: bytes = None):
-        """
-        -- logging --
-        Updates the weather conditions, user comment, and photo of an existing sample in the database.
-        Returns True if the update is successful, False otherwise.
-        """
-        if weather == user_comment == photo == None:
-            return False
+    @multimethod
+    def push_photo(self, sample_id: int, photo_bytes: bytes):
+        return self._update_sample(sample_id, column_name="photo", value=photo_bytes)
 
-        with self.db as (conn, cursor):
-            cursor.execute("SELECT * FROM samples WHERE sample_id = %s", (sample_id,))
-            sample_data = cursor.fetchone()
-            if not sample_data:
-                self.logger.log_message(f"Error: Sample #{sample_id} does not exist.")
-                return False
+    @multimethod
+    def push_photo(self, sample_id: int, photo_hex: str):
+        photo_bytes = bytes.fromhex(photo_hex)
+        return self._update_sample(sample_id, column_name="photo", value=photo_bytes)
 
-            logmsg = []
-            update_query = "UPDATE samples SET "
-            update_values = []
-
-            if weather is not None:
-                update_query += "weather_conditions = %s, "
-                update_values.append(weather)
-                logmsg.append("weather info")
-
-            if user_comment is not None:
-                update_query += "user_comment = %s, "
-                update_values.append(user_comment)
-                logmsg.append("user comment")
-
-            if photo is not None:
-                update_query += "photo = %s, "
-                update_values.append(photo)
-                logmsg.append("photo")
-
-            # Remove the trailing comma and space
-            update_query = update_query[:-2]
-
-            update_query += " WHERE sample_id = %s"
-            update_values.append(sample_id)
-
-            cursor.execute(update_query, update_values)
-            conn.commit()
-            self.logger.log_message(f"Info : Pushed details: {', '.join(logmsg)} for sample #{sample_id}.")
-        return True
-
-    def get_photo(self, sample_id):
+    @multimethod
+    def get_photo(self, sample_id: int):
         if not self.has(sample_id):
             self.logger.log_message(f"Error: Sample #{sample_id} does not exist.")
             return b''
