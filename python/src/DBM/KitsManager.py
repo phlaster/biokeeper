@@ -75,9 +75,9 @@ class KitsManager(AbstractDBManager):
             kit_data = cursor.fetchone()
 
             if kit_data:
-                kit_info_dict['kit_unique_code'] = bytes(kit_data[0])
-                kit_info_dict['created_at'] = kit_data[1]
-                kit_info_dict['updated_at'] = kit_data[2]
+                kit_info_dict['kit_unique_code'] = bytes(kit_data[0]).hex()
+                kit_info_dict['created_at'] = kit_data[1].strftime("%Y-%m-%d, %H:%M:%S")
+                kit_info_dict['updated_at'] = kit_data[2].strftime("%Y-%m-%d, %H:%M:%S")
 
                 cursor.execute("SELECT status_key FROM kit_statuses WHERE status_id = %s", (kit_data[3],))
                 kit_status_key = cursor.fetchone()[0]

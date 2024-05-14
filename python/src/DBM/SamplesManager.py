@@ -53,10 +53,10 @@ class SamplesManager(AbstractDBManager):
             if kit_data:
                 sample_info_dict['research_id'] = kit_data[0]
                 sample_info_dict['qr_id'] = kit_data[1]
-                sample_info_dict['collected_at'] = kit_data[2]
-                sample_info_dict['uploaded_at'] = kit_data[3]
-                sample_info_dict['sent_to_lab_at'] = kit_data[4]
-                sample_info_dict['delivered_to_lab_at'] = kit_data[5]
+                sample_info_dict['collected_at'] = kit_data[2].strftime("%Y-%m-%d, %H:%M:%S") if kit_data[2] else None
+                sample_info_dict['uploaded_at'] = kit_data[3].strftime("%Y-%m-%d, %H:%M:%S") 
+                sample_info_dict['sent_to_lab_at'] = kit_data[4].strftime("%Y-%m-%d, %H:%M:%S") if kit_data[4] else None
+                sample_info_dict['delivered_to_lab_at'] = kit_data[5].strftime("%Y-%m-%d, %H:%M:%S") if kit_data[5] else None
 
                 cursor.execute("SELECT status_key FROM sample_statuses WHERE status_id = %s", (kit_data[6],))
                 kit_status_key = cursor.fetchone()[0]
