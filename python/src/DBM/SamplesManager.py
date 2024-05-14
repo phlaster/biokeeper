@@ -3,6 +3,7 @@ from DBM.UsersManager import UsersManager
 from DBM.KitsManager import KitsManager
 from DBM.ResearchesManager import ResearchesManager
 
+from multimethod import multimethod, Union
 import datetime
 
 class SamplesManager(AbstractDBManager):
@@ -24,16 +25,16 @@ class SamplesManager(AbstractDBManager):
         """
         return self._counter("sample_statuses", status)
 
-    
-    def has_status(self, status):
+    @multimethod
+    def has_status(self, status: str):
         return self._is_status_of("sample", status)
 
-    
-    def has(self, sample_id):
+    @multimethod
+    def has(self, sample_id: int):
         return self._is("sample_id", "samples", "sample_id", sample_id)
 
-    
-    def status_of(self, sample_id):
+    @multimethod
+    def status_of(self, sample_id: int):
         """
         -- logging --
         Returns the status of a kit with the given sample_id.
@@ -44,7 +45,7 @@ class SamplesManager(AbstractDBManager):
             return ""
         return self._status_getter("sample_status", "samples", "sample_id", "sample_statuses", sample_id)
 
-
+    @multimethod
     def get_info(self, sample_id: int):
         """
         -- logging --
@@ -80,15 +81,12 @@ class SamplesManager(AbstractDBManager):
     def get_all(self):
         return self._all_getter("sample_id", "samples")
 
-    
+    @multimethod
     def new(self,
         qr_bytes: bytes,
         research_name: str,
         collected_at: datetime.datetime,
         gps: tuple[float, float],
-        weather: str = None,
-        user_comment: str = None,
-        photo: bytes = None
     ):
         """
         -- logging --
@@ -150,10 +148,10 @@ class SamplesManager(AbstractDBManager):
         
         with self.db as (conn, cursor):
             cursor.execute("""
-                INSERT INTO samples (research_id, qr_id, collected_at, gps, weather_conditions, user_comment, photo)
-                VALUES (%s, %s, %s, POINT(%s), %s, %s, %s)
+                INSERT INTO samples (research_id, qr_id, collected_at, gps)
+                VALUES (%s, %s, %s, POINT(%s))
                 RETURNING sample_id
-            """, (research_info['research_id'], qr_id, collected_at, str(gps), weather, user_comment, photo))
+            """, (research_info['research_id'], qr_id, collected_at, str(gps)))
             sample_id = cursor.fetchone()[0]
             cursor.execute("UPDATE sample_statuses SET n = n + 1 WHERE status_id = 1")
             cursor.execute("UPDATE qrs SET is_used = true WHERE qr_id = %s", (qr_id,))
@@ -166,8 +164,18 @@ class SamplesManager(AbstractDBManager):
         self.logger.log_message("Info : New sample inserted successfully.")
         return sample_id
 
+    @multimethod
+    def new(self,
+        qr_hex: str,
+        research_name: str,
+        collected_at: datetime.datetime,
+        gps: tuple[float, float],
+    ):
+        qr_bytes = bytes.fromhex(qr_hex)
+        return self.new(qr_bytes, research_name, collected_at, gps)
     
-    def change_status(self, sample_id, new_status):
+    @multimethod
+    def change_status(self, sample_id: int, new_status: str):
         return self._change_status("sample_id", "samples", "sample_status", "sample_statuses", sample_id, new_status)
         
     @multimethod
