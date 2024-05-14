@@ -1,11 +1,11 @@
 from DBM.ADBM import AbstractDBManager
 import hashlib
 import os
-from multipledispatch import dispatch
+from multimethod import multimethod
 
 
 class UsersManager(AbstractDBManager):
-    @dispatch(str, str)
+    @multimethod
     def _validate_password(self, password: str, user_name: str):
         """
         --- logging ---
@@ -18,7 +18,7 @@ class UsersManager(AbstractDBManager):
             self.logger.log_message(f"Error: Password validation for '{user_name}' failed.")
             return False
     
-    @dispatch(str)
+    @multimethod
     def _validate_user_name(self, user_name: str):
         """
         --- logging ---
@@ -30,14 +30,14 @@ class UsersManager(AbstractDBManager):
             self.logger.log_message(f"Error: Username '{user_name}' validation failed.")
             return False
     
-    @dispatch(bytes, bytes)
+    @multimethod
     def _hashing(self, password_bytes: bytes, salt: bytes) -> bytes:
         """
         hashing password with salt
         """
         return hashlib.scrypt(password_bytes, salt=salt, n=2**14, r=8, p=1)
     
-    @dispatch(str)
+    @multimethod
     def _hash_and_salt(self, password: str) -> tuple[bytes, bytes]:
         """
         Hashes a password with a salt using the scrypt algorithm.
@@ -47,7 +47,7 @@ class UsersManager(AbstractDBManager):
         hashed = self._hashing(password_bytes, salt)
         return (hashed, salt)
 
-    def count(self, status = "all"):
+    def count(self, status: str = "all"):
         """
         Returns number of users with different statuses.
         'all' for all statuses OR
@@ -55,19 +55,19 @@ class UsersManager(AbstractDBManager):
         """
         return self._counter("user_statuses", status)
 
-    @dispatch(str)
+    @multimethod
     def has_status(self, status: str):
         return self._is_status_of("user", status)
 
-    @dispatch(str)
+    @multimethod
     def has(self, user_name: str):
         return self._is("user_id", "users", "user_name", user_name)
     
-    @dispatch(int)
+    @multimethod
     def has(self, user_id: int):
         return self._is("user_name", "users", "user_id", user_id)
 
-    @dispatch(str)
+    @multimethod
     def status_of(self, user_name: str):
         """
         -- logging --
@@ -78,12 +78,12 @@ class UsersManager(AbstractDBManager):
             return ""
         return self._status_getter("user_status", "users", "user_name", "user_statuses", user_name)
     
-    @dispatch(int)
+    @multimethod
     def status_of(self, user_id: int):
         username = self.has(user_id)
         return self.status_of(username)
 
-    @dispatch(str)
+    @multimethod
     def get_info(self, user_name: str):
         """
         Returns user information as a dictionary for the given user_name.
@@ -107,12 +107,12 @@ class UsersManager(AbstractDBManager):
                 status_key = cursor.fetchone()[0]
                 user_info_dict['user_status'] = status_key
 
-                user_info_dict['created_at'] = user_data[2]
-                user_info_dict['updated_at'] = user_data[3]
+                user_info_dict['created_at'] = user_data[2].strftime("%Y-%m-%d, %H:%M:%S")
+                user_info_dict['updated_at'] = user_data[3].strftime("%Y-%m-%d, %H:%M:%S")
                 user_info_dict['n_samples_collected'] = user_data[4]
         return user_info_dict
 
-    @dispatch(int)
+    @multimethod
     def get_info(self, user_id: int):
         username = self.has(user_id)
         return self.status_of(username)
@@ -120,7 +120,7 @@ class UsersManager(AbstractDBManager):
     def get_all(self):
         return self._all_getter("user_name", "users")
 
-    @dispatch(str, str)
+    @multimethod
     def new(self, user_name: str, password: str):
         """
         -- logging --
@@ -148,16 +148,16 @@ class UsersManager(AbstractDBManager):
         self.logger.log_message(f"Info : User #{user_id} '{user_name}' has been created")
         return user_id 
 
-    @dispatch(str, str)
+    @multimethod
     def change_status(self, user_name: str, new_status: str):
         return self._change_status("user_name", "users", "user_status", "user_statuses", user_name, new_status)
 
-    @dispatch(int, str)
+    @multimethod
     def change_status(self, user_id, new_status):
         username = self.has(user_id)
         return self._change_status("user_name", "users", "user_status", "user_statuses", user_name, new_status)
 
-    @dispatch(str, str)
+    @multimethod
     def rename(self, old_user_name: str, new_user_name: str):
         """
         -- logging --
@@ -185,12 +185,12 @@ class UsersManager(AbstractDBManager):
         self.logger.log_message(f"Info : User '{old_user_name}' changed name to '{new_user_name}'.")
         return new_user_name
 
-    @dispatch(int, str)
-    def rename(self, user_id: str, new_user_name: str):
+    @multimethod
+    def rename(self, user_id: int, new_user_name: str):
         old_user_name = self.has(user_id)
         return self.rename(self, old_user_name, new_user_name)
     
-    @dispatch(str, str)
+    @multimethod
     def change_user_password(self, user_name: str, new_password: str):
         """
         -- logging --
@@ -214,12 +214,12 @@ class UsersManager(AbstractDBManager):
         self.logger.log_message(f"Info : Changed password for user '{user_name}'.")
         return True
 
-    @dispatch(int, str)
+    @multimethod
     def change_user_password(self, user_id: str, new_password: str):
         user_name = self.has(user_id)
         return self.change_user_password(user_name, new_password)
     
-    @dispatch(str, str)
+    @multimethod
     def password_match(self, user_name: str, password: str):
         """
         -- logging --
@@ -235,7 +235,7 @@ class UsersManager(AbstractDBManager):
 
         return rehashed_password == bytes(stored_hash)
 
-    @dispatch(int, str)
-    def password_match(self, user_id: str, password: str):
+    @multimethod
+    def password_match(self, user_id: int, password: str):
         user_name = self.has(user_id)
         return self.password_match(user_name, password)
