@@ -1,9 +1,11 @@
-
 from DBM.UsersManager import UsersManager
 from DBM.KitsManager import KitsManager
 from DBM.ResearchesManager import ResearchesManager
 from DBM.SamplesManager import SamplesManager
 from Logger import Logger
+import random
+import string
+import datetime
 
 from pathlib import Path
 
@@ -80,3 +82,50 @@ class DBManager:
         self.kits = KitsManager(logdata, logfile="logs.log")
         self.researches = ResearchesManager(logdata, logfile="logs.log")
         self.samples = SamplesManager(logdata, logfile="logs.log")
+    
+    def generate_test_example(self):
+        rstr = lambda k=10: ''.join(random.choices(string.ascii_uppercase + string.digits, k=k))
+        user_name = rstr()
+        user_password = rstr()
+        self.users.new(user_name, user_password)
+        self.users.change_status(user_name, "admin")
+
+        research_name = rstr()
+        day_start = datetime.date(2020, 1, 1)
+        self.researches.new(research_name, user_name, day_start)
+
+        kit_id = self.kits.new(11)
+        self.kits.change_owner(kit_id, user_name)
+        self.kits.change_status(kit_id, "activated")
+
+        body = {
+            "user" : {
+                "name" : user_name,
+                "password" : user_password
+            },
+            "research" : {
+                "name" : research_name
+            },
+            "kit" : {
+                "id" : kit_id
+            }
+        }
+        
+        for key, value in self.users.get_info(user_name).items():
+            body["user"][key] = value
+        for key, value in self.kits.get_info(kit_id).items():
+            body["kit"][key] = value
+        for key, value in self.researches.get_info(research_name).items():
+            body["research"][key] = value
+        
+        qr_hex = list(body["kit"]["qrs"].items())[-1][1]
+
+        sample_id = self.samples.new(qr_hex, research_name, datetime.datetime.now(), (4.2, 6.9))
+        print(sample_id)
+        return
+        with open('python/src/DBM/mps', 'rb') as file:
+            photo_bytes = file.read()
+            self.samples.push_photo(sample_id, photo_bytes)
+
+        body["sample"] = self.samples.get_info(sample_id)
+        return body
