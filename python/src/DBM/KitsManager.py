@@ -106,6 +106,9 @@ class KitsManager(AbstractDBManager):
         Inserts a new kit with `n_qrs` QRs into the database.
         Returns the kit_id if successful, otherwise False.
         """
+        if n_qrs > 50:
+            self.logger.log_message(f"Info : No more than 50 QRs in one kit!")
+            n_qrs = 50
         kit_unique_code = os.urandom(16)
         qr_unique_codes = self._generate_qr_bytes(n_qrs, 10)
         
