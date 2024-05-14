@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-
+from multimethod import multimethod
 from DBM.DBConnection import DBConnection
 from Logger import Logger
 
@@ -10,7 +10,7 @@ class AbstractDBManager(ABC):
         self.logfile = logfile
         self.logger = Logger(logfile)
     
-    def _counter(self, table_name:str, status_key:str):
+    def _counter(self, table_name:str, status_key: str = "all"):
         with self.db as (conn, cursor):
             if status_key == 'all':
                 cursor.execute(f"SELECT SUM(n) FROM {table_name};")
@@ -151,6 +151,7 @@ class AbstractDBManager(ABC):
     def clear_logs(self):
         self.logger.clear_logs()
 
+    @multimethod
     def get_qr_info(self, qr_bytes: bytes):
         """
         returns dict with QR info if successfull
@@ -162,5 +163,7 @@ class AbstractDBManager(ABC):
 
         return {'qr_id': int(result[0]), 'is_used': bool(result[1]), 'kit_id': int(result[2])} if result else {}
 
-
-
+    @multimethod
+    def get_qr_info(self, qr_hex: str):
+        qr_bytes = bytes.fromhex(qr_hex)
+        return self.get_qr_info(qr_bytes)
