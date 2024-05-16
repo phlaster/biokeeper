@@ -17,9 +17,19 @@ services:
       - POSTGRES_PASSWORD=root
     image: postgres
     volumes:
-      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
-      - /etc/localtime:/etc/localtime:ro
+      # DB initialization scripts
+      - ./postgres/01-functions-and-stuff.sql:/docker-entrypoint-initdb.d/01-functions-and-stuff.sql
+      - ./postgres/02-user.sql:/docker-entrypoint-initdb.d/02-user.sql
+      - ./postgres/03-research.sql:/docker-entrypoint-initdb.d/03-research.sql
+      - ./postgres/04-kit.sql:/docker-entrypoint-initdb.d/04-kit.sql
+      - ./postgres/05-qr.sql:/docker-entrypoint-initdb.d/05-qr.sql
+      - ./postgres/06-sample.sql:/docker-entrypoint-initdb.d/06-sample.sql
+      
+      # Expose DB data folder to host machine
       - ./postgres/data/:/var/lib/postgresql/data/
+
+      # Sync time with host machine
+      - /etc/localtime:/etc/localtime:ro
     command: ["postgres", "-c", "log_statement=all"]
     networks:
       bk:
