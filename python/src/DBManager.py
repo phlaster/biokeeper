@@ -3,9 +3,12 @@ from DBM.KitsManager import KitsManager
 from DBM.ResearchesManager import ResearchesManager
 from DBM.SamplesManager import SamplesManager
 from Logger import Logger
+from Weather import Weather
+
 import random
 import string
 import datetime
+from threading import Thread
 
 from pathlib import Path
 
@@ -82,6 +85,8 @@ class DBManager:
         self.kits = KitsManager(logdata, logfile=logfile)
         self.researches = ResearchesManager(logdata, logfile=logfile)
         self.samples = SamplesManager(logdata, logfile=logfile)
+        self.weather = Weather(past_days=3)
+        self._threads = []
     
     def generate_test_example(self):
         rstr = lambda k=10: ''.join(random.choices(string.ascii_uppercase + string.digits, k=k))
@@ -117,15 +122,40 @@ class DBManager:
         
         qr_hex = list(body["kit"]["qrs"].items())[-1][1]
 
-        sample_id = self.samples.new(qr_hex, research_name, datetime.datetime.now(), (49.10503, -2.81411), log=True)
+        sample_id = self.samples.new(qr_hex, research_name, datetime.datetime.now(datetime.timezone.utc), (49.10503, -2.81411), log=True)
         with open('python/src/DBM/mps', 'rb') as file:
             photo_bytes = file.read()
             self.samples.push_photo(sample_id, photo_bytes)
 
         body["sample"] = self.samples.get_info(sample_id)
+        body["sample"]["id"] = sample_id
         for key, value in self.researches.get_info(research_name).items():
             body["research"][key] = value
         for key, value in self.users.get_info(user_name).items():
             body["user"][key] = value
 
         return body
+
+    def _async_weather_request(self, sample_id: int):
+        def parse_coordinates(coordinate_string):
+            coordinate_string = coordinate_string.strip("()")
+            latitude, longitude = coordinate_string.split(",")
+            latitude = float(latitude.strip())
+            longitude = float(longitude.strip())
+            return (latitude, longitude)
+
+        sample_info = self.samples.get_info(sample_id)
+        gps = parse_coordinates(sample_info['gps'])
+        print(sample_info['collected_at'])
+        collected_at = datetime.datetime.strptime(sample_info['collected_at'], "%Y-%m-%d %H:%M:%S %Z%z")
+        weather = self.weather.get_weather(gps, collected_at)
+        self.samples.push_weather(sample_id, weather)
+
+    def attach_weather_to_sample(self, sample_id: int):
+        t = Thread(target=self._async_weather_request, args=(sample_id,))
+        t.start()
+        self._threads.append(t)
+
+    def join_threads(self):
+        for t in self._threads:
+            t.join()
