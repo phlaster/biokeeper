@@ -93,6 +93,7 @@ class DBManager:
         research_name = rstr()
         day_start = datetime.date(2020, 1, 1)
         self.researches.new(research_name, user_name, day_start)
+        self.researches.change_status(research_name, "ongoing")
 
         kit_id = self.kits.new(11)
         self.kits.change_owner(kit_id, user_name)
@@ -111,21 +112,20 @@ class DBManager:
             }
         }
         
-        for key, value in self.users.get_info(user_name).items():
-            body["user"][key] = value
         for key, value in self.kits.get_info(kit_id).items():
             body["kit"][key] = value
-        for key, value in self.researches.get_info(research_name).items():
-            body["research"][key] = value
         
         qr_hex = list(body["kit"]["qrs"].items())[-1][1]
 
-        sample_id = self.samples.new(qr_hex, research_name, datetime.datetime.now(), (4.2, 6.9))
-        print(sample_id)
-        return
+        sample_id = self.samples.new(qr_hex, research_name, datetime.datetime.now(), (49.10503, -2.81411), log=True)
         with open('python/src/DBM/mps', 'rb') as file:
             photo_bytes = file.read()
             self.samples.push_photo(sample_id, photo_bytes)
 
         body["sample"] = self.samples.get_info(sample_id)
+        for key, value in self.researches.get_info(research_name).items():
+            body["research"][key] = value
+        for key, value in self.users.get_info(user_name).items():
+            body["user"][key] = value
+
         return body
