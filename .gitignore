@@ -11,6 +11,8 @@ python/venv/
 # Ignore logs, except the ones in the root directory
 *.log
 
-
 # Ignore the IDE-related files and directories
 .vscode/
+
+# JSON
+*.json
