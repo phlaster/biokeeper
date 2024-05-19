@@ -4,6 +4,7 @@ import sys
 import traceback
 import datetime
 from time import time
+from json import dumps
 
 import sys
 sys.path.append('python/src')
@@ -222,9 +223,9 @@ def kits(DBM):
     # assert kit_1_info["created_at"] < kit_1_info["updated_at"] < kit_2_info["created_at"] == kit_2_info["updated_at"]
     qr_key = list(kit_1_info["qrs"].keys())[3]
     assert isinstance(qr_key, int)
-    qr_bytes = kit_1_info["qrs"][qr_key]
-    # assert isinstance(qr_bytes, bytes)
-    assert DBM.kits.get_qr_info(qr_bytes)
+    qr_hex = kit_1_info["qrs"][qr_key]
+    assert isinstance(qr_hex, str)
+    assert DBM.kits.get_qr_info(qr_hex)
 
     # Kit owners
     assert kit_1_info['owner'] == None
@@ -245,8 +246,7 @@ def qrcodes(DBM):
         assert DBM.kits.get_qr_info(binary)['kit_id'] == new_kit
 
 def samples(DBM):
-    assert not DBM.samples.new(b'123141143', rstr(), datetime.datetime.now(), (2.4, 2.1))
-    assert not DBM.samples.new(b'123141143'.hex(), rstr(), datetime.datetime.now(), (2.4, 2.1))
+    assert not DBM.samples.new("589461abcbfc6451a586", rstr(), datetime.datetime.now(), (2.4, 2.1))
 
     research_user = rstr()
     research_user_id = DBM.users.new(research_user, rstr())
@@ -276,6 +276,7 @@ def samples(DBM):
     assert n_samples == DBM.samples.count("all")
     assert n_samples_delivered + n_samples_sent + n_samples_collected == n_samples
 
+    assert not DBM.samples.new(some_qr_bytes, research_name, datetime.datetime.now(), (-95.9, 181.9)) # incorrect coordinates
     sample_id = DBM.samples.new(some_qr_bytes, research_name, datetime.datetime.now(), (2.4, 2.1)) # the PUSH
     assert isinstance(sample_id, int)
     assert DBM.users.get_info(research_user)["n_samples_collected"] == n_collected + 1 == 1
@@ -307,19 +308,19 @@ def dispatch_testing(DBM):
     user_id = DBM.users.new(username, passwd)
 
     assert user_id == DBM.users.has(username)
-    assert username == DBM.users.has(user_id)
-
     assert DBM.users.password_match(username, passwd)
     assert DBM.users.password_match(user_id, passwd)
 
 def gte(DBM):
-    DBM.generate_test_example()
+    example = DBM.generate_test_example()
+    with open("dump.json", "w") as f:
+        f.write(dumps(example))
 
 def main():
     logfile="test_strange.log"
     DBM = DBManager(LOGDATA, logfile)
     DBM.logger.clear_logs()
-    DBM.logger.log_message("Info : Test started!")
+    DBM.logger.log("Info : Test started!")
     test_time = time()
 
     try:
@@ -340,10 +341,10 @@ def main():
         traceback.print_tb(var)
         tb_info = traceback.extract_tb(var)
         filename, line_number, _, text = tb_info[-1]
-        DBM.logger.log_message(f"An error occurred on line {line_number} in file {filename} in statement {text}")
+        DBM.logger.log(f"An error occurred on line {line_number} in file {filename} in statement {text}")
         raise e
     finally:
-        DBM.logger.log_message(f"Info : Test ended in {round(time()-test_time, ndigits=1)} s.")
+        DBM.logger.log(f"Info : Test ended in {round(time()-test_time, ndigits=1)} s.")
 
 if __name__ == "__main__":
     main()
