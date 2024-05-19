@@ -10,7 +10,7 @@ VALUES
 
 CREATE TABLE "user" (
     id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL,
+    name TEXT NOT NULL UNIQUE,
     status INT NOT NULL DEFAULT 3,
     FOREIGN KEY (status) REFERENCES user_statuses(id),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

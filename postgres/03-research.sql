@@ -12,7 +12,7 @@ VALUES
 
 CREATE TABLE "research" (
     id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL,
+    name TEXT NOT NULL UNIQUE,
     status INT NOT NULL DEFAULT 1,
     FOREIGN KEY (status) REFERENCES research_statuses(id),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

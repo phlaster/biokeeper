@@ -1,6 +1,6 @@
 CREATE TABLE "qr" (
     id SERIAL PRIMARY KEY,
-    unique_hex VARCHAR(20) NOT NULL,
+    unique_hex VARCHAR(20) NOT NULL UNIQUE,
     kit_id INT NOT NULL,
     FOREIGN KEY (kit_id) REFERENCES "kit"(id),
     is_used BOOLEAN NOT NULL DEFAULT false
