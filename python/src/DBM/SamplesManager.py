@@ -81,12 +81,12 @@ class SamplesManager(AbstractDBManager):
                 sample_info_dict['qr_id'] = kit_data[1]
                 sample_info_dict['sample_status'] = self.status_of(sample_id)
                 sample_info_dict['owner_id'] = kit_data[2]
-                sample_info_dict['collected_at'] = kit_data[3].strftime("%Y-%m-%d, %H:%M:%S")
-                sample_info_dict['created_at'] = kit_data[4].strftime("%Y-%m-%d, %H:%M:%S")
-                sample_info_dict['updated_at'] = kit_data[5].strftime("%Y-%m-%d, %H:%M:%S") 
-                sample_info_dict['sent_to_lab_at'] = kit_data[6].strftime("%Y-%m-%d, %H:%M:%S") if kit_data[6] else None
-                sample_info_dict['delivered_to_lab_at'] = kit_data[7].strftime("%Y-%m-%d, %H:%M:%S") if kit_data[7] else None
-                sample_info_dict['gps'] = ",".join(kit_data[8][1:-1].split(", "))
+                sample_info_dict['collected_at'] = kit_data[3].strftime("%Y-%m-%d %H:%M:%S %Z")
+                sample_info_dict['created_at'] = kit_data[4].strftime("%Y-%m-%d %H:%M:%S %Z")
+                sample_info_dict['updated_at'] = kit_data[5].strftime("%Y-%m-%d %H:%M:%S %Z") 
+                sample_info_dict['sent_to_lab_at'] = kit_data[6].strftime("%Y-%m-%d %H:%M:%S %Z") if kit_data[6] else None
+                sample_info_dict['delivered_to_lab_at'] = kit_data[7].strftime("%Y-%m-%d %H:%M:%S %Z") if kit_data[7] else None
+                sample_info_dict['gps'] = kit_data[8] #",".join(kit_data[8][1:-1].split(", "))
                 sample_info_dict['weather_conditions'] = kit_data[9]
                 sample_info_dict['user_comment'] = kit_data[10]
                 sample_info_dict['photo'] = True if kit_data[11] else None
@@ -115,7 +115,7 @@ class SamplesManager(AbstractDBManager):
         kits = KitsManager(self.logdata, logfile=self.logfile)
         researches = ResearchesManager(self.logdata, logfile=self.logfile)
 
-        if collected_at > datetime.datetime.now() and log:
+        if collected_at > datetime.datetime.now(datetime.timezone.utc) and log:
             self.logger.log(f"Warn : The sample seems to be collected in future at {collected_at}.")
 
         research_info = researches.get_info(research_name)
@@ -208,7 +208,7 @@ class SamplesManager(AbstractDBManager):
         
     @multimethod
     def push_weather(self, sample_id: int, weather: str):
-        return self._update_sample(sample_id, column_name="weather", value=weather)
+        return self._update_sample(sample_id, column_name="weather_conditions", value=weather)
 
     @multimethod
     def push_comment(self, sample_id: int, comment: str):

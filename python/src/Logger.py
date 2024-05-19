@@ -6,7 +6,7 @@ class Logger:
 
     def log(self, msg, return_value = None):
         with open(self.log_file, "a") as f:
-            print(datetime.datetime.now(), msg, file=f)
+            print(datetime.datetime.now(datetime.timezone.utc), msg, file=f)
         return return_value
 
     def clear_logs(self) -> None:
