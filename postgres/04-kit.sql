@@ -16,8 +16,8 @@ CREATE TABLE "kit" (
     status INT NOT NULL DEFAULT 1,
     FOREIGN KEY (status) REFERENCES kit_statuses(id),
     n_qrs INT NOT NULL,
-    user_id INT,
-    FOREIGN KEY (user_id) REFERENCES "user"(id)
+    owner_id INT,
+    FOREIGN KEY (owner_id) REFERENCES "user"(id)
 );
 
 CREATE TRIGGER autoupdate_kits
@@ -30,6 +30,6 @@ AFTER INSERT OR UPDATE ON "kit"
 FOR EACH ROW
 EXECUTE FUNCTION update_status_n('kit_statuses');
 
-CREATE INDEX ON "kit" (user_id);
+CREATE INDEX ON "kit" (owner_id);
 CREATE INDEX ON "kit" (unique_hex);
 ANALYZE "kit";
