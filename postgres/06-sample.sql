@@ -23,7 +23,7 @@ CREATE TABLE "sample" (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     sent_to_lab_at TIMESTAMP,
     delivered_to_lab_at TIMESTAMP,
-    gps POINT,
+    gps POINT NOT NULL,
     weather_conditions JSON,
     comment TEXT,
     photo BYTEA -- https://www.postgresql.org/docs/7.4/jdbc-binary-data.html
