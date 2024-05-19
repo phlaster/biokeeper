@@ -6,4 +6,4 @@ from DBManager import DBManager, LOGDATA
 logfile="fastapi.log"
 DBM = DBManager(LOGDATA, logfile)
 DBM.logger.clear_logs()
-DBM.logger.log_message("Info : Test started!")
+DBM.logger.log("Info : Test started!")

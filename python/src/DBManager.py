@@ -78,10 +78,10 @@ class DBManager:
     """
     def __init__(self, logdata, logfile="logs.log"):
         self.logger = Logger(logfile)
-        self.users = UsersManager(logdata, logfile="logs.log")
-        self.kits = KitsManager(logdata, logfile="logs.log")
-        self.researches = ResearchesManager(logdata, logfile="logs.log")
-        self.samples = SamplesManager(logdata, logfile="logs.log")
+        self.users = UsersManager(logdata, logfile=logfile)
+        self.kits = KitsManager(logdata, logfile=logfile)
+        self.researches = ResearchesManager(logdata, logfile=logfile)
+        self.samples = SamplesManager(logdata, logfile=logfile)
     
     def generate_test_example(self):
         rstr = lambda k=10: ''.join(random.choices(string.ascii_uppercase + string.digits, k=k))
