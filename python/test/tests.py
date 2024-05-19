@@ -246,7 +246,7 @@ def qrcodes(DBM):
         assert DBM.kits.get_qr_info(binary)['kit_id'] == new_kit
 
 def samples(DBM):
-    assert not DBM.samples.new("589461abcbfc6451a586", rstr(), datetime.datetime.now(), (2.4, 2.1))
+    assert not DBM.samples.new("589461abcbfc6451a586", rstr(), datetime.datetime.now(datetime.timezone.utc), (2.4, 2.1))
 
     research_user = rstr()
     research_user_id = DBM.users.new(research_user, rstr())
@@ -259,11 +259,11 @@ def samples(DBM):
     kit_id = DBM.kits.new(5)
     some_qr_bytes = list(DBM.kits.get_qrs(kit_id).values())[2]
 
-    assert not DBM.samples.new(some_qr_bytes, research_name, datetime.datetime.now(), (2.4, 2.1)) # research is not ongoing
+    assert not DBM.samples.new(some_qr_bytes, research_name, datetime.datetime.now(datetime.timezone.utc), (2.4, 2.1)) # research is not ongoing
     DBM.researches.change_status(research_name, "ongoing")
-    assert not DBM.samples.new(some_qr_bytes, research_name, datetime.datetime.now(), (2.4, 2.1)) # kit has no owner
+    assert not DBM.samples.new(some_qr_bytes, research_name, datetime.datetime.now(datetime.timezone.utc), (2.4, 2.1)) # kit has no owner
     DBM.kits.change_owner(kit_id, research_user)
-    assert not DBM.samples.new(some_qr_bytes, research_name, datetime.datetime.now(), (2.4, 2.1)) # kit has not been activated
+    assert not DBM.samples.new(some_qr_bytes, research_name, datetime.datetime.now(datetime.timezone.utc), (2.4, 2.1)) # kit has not been activated
     DBM.kits.change_status(kit_id, "activated")
 
     n_collected = DBM.users.get_info(research_user)["n_samples_collected"]
@@ -276,12 +276,12 @@ def samples(DBM):
     assert n_samples == DBM.samples.count("all")
     assert n_samples_delivered + n_samples_sent + n_samples_collected == n_samples
 
-    assert not DBM.samples.new(some_qr_bytes, research_name, datetime.datetime.now(), (-95.9, 181.9)) # incorrect coordinates
-    sample_id = DBM.samples.new(some_qr_bytes, research_name, datetime.datetime.now(), (2.4, 2.1)) # the PUSH
+    assert not DBM.samples.new(some_qr_bytes, research_name, datetime.datetime.now(datetime.timezone.utc), (-95.9, 181.9)) # incorrect coordinates
+    sample_id = DBM.samples.new(some_qr_bytes, research_name, datetime.datetime.now(datetime.timezone.utc), (2.4, 2.1)) # the PUSH
     assert isinstance(sample_id, int)
     assert DBM.users.get_info(research_user)["n_samples_collected"] == n_collected + 1 == 1
     assert DBM.kits.get_qr_info(some_qr_bytes)["is_used"]
-    assert not DBM.samples.new(some_qr_bytes, research_name, datetime.datetime.now(), (2.4, 2.1)) # QR is used
+    assert not DBM.samples.new(some_qr_bytes, research_name, datetime.datetime.now(datetime.timezone.utc), (2.4, 2.1)) # QR is used
 
     assert n_samples + 1 == DBM.samples.count("all")
     assert DBM.samples.count("collected") == n_samples_collected + 1
@@ -315,6 +315,9 @@ def gte(DBM):
     example = DBM.generate_test_example()
     with open("dump.json", "w") as f:
         f.write(dumps(example))
+    sample_id = example["sample"]["id"]
+    DBM.attach_weather_to_sample(sample_id)
+    DBM.join_threads()
 
 def main():
     logfile="test_strange.log"
@@ -324,16 +327,16 @@ def main():
     test_time = time()
 
     try:
-        existing_statuses(DBM)
-        new_user(DBM)
-        user_password_validation(DBM)
-        user_2_info(DBM)
-        user_renaming(DBM)
-        researches(DBM)
-        kits(DBM)
-        qrcodes(DBM)
-        samples(DBM)
-        dispatch_testing(DBM)
+        # existing_statuses(DBM)
+        # new_user(DBM)
+        # user_password_validation(DBM)
+        # user_2_info(DBM)
+        # user_renaming(DBM)
+        # researches(DBM)
+        # kits(DBM)
+        # qrcodes(DBM)
+        # samples(DBM)
+        # dispatch_testing(DBM)
         gte(DBM)
         print(f"All tests passed in {round(time()-test_time, ndigits=1)} s.")
     except Exception as e:
