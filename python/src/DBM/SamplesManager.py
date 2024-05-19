@@ -7,15 +7,17 @@ from multimethod import multimethod, Union
 import datetime
 
 class SamplesManager(AbstractDBManager):
-    def _update_sample(self, sample_id: int, column_name: str, value: Union[str, bytes]):
+    def _update_sample(self, sample_id: int, column_name: str, value: Union[str, bytes], log=False):
         if not self.has(sample_id):
-            self.logger.log_message(f"Error: Sample #{sample_id} does not exist.")
-            return False
+            return self.logger.log(f"Error: Sample #{sample_id} does not exist.", False) if log else False
         with self.db as (conn, cursor):
-            cursor.execute(f"UPDATE samples SET {column_name} = %s WHERE sample_id = %s", (value, sample_id,))
+            cursor.execute(f"""
+                UPDATE "sample"
+                SET {column_name} = %s
+                WHERE id = %s
+            """, (value, sample_id,))
             conn.commit()
-        self.logger.log_message(f"Info : Sample #{sample_id} was updated at {column_name}.")
-        return True
+        return self.logger.log(f"Info : Sample #{sample_id} was updated at {column_name}.", True) if log else True
 
     def count(self, status:str="all"):
         """
@@ -30,51 +32,64 @@ class SamplesManager(AbstractDBManager):
         return self._is_status_of("sample", status)
 
     @multimethod
-    def has(self, sample_id: int):
-        return self._is("sample_id", "samples", "sample_id", sample_id)
+    def has(self, sample_id: int, log=False):
+        id = self._SELECT("id", "sample", "id", sample_id)
+        if not id:
+            return self.logger.log(f"Error: No such sample #{sample_id}.", 0) if log else 0
+        return id
 
     @multimethod
-    def status_of(self, sample_id: int):
+    def has(self, qr_unique_hex: str):
+        qr_info = self.get_qr_info(qr_unique_hex)
+        if not qr_info:
+            return self.logger.log(f"Error: Wrong QR hex: '{qr_unique_hex}'", 0) if log else 0
+        qr_id = qr_info["qr_id"]
+        sample_id = self._SELECT("id", "sample", "qr_id", qr_id)
+        if not sample_id:
+            return self.logger.log(f"Error: No sample for QR #{qr_id}", 0) if log else 0
+
+    @multimethod
+    def status_of(self, sample_id: int, log=False):
         """
-        -- logging --
         Returns the status of a kit with the given sample_id.
         If the kit does not exist, returns False.
         """
-        if not self.has(sample_id):
-            self.logger.log_message(f"Error: Sample #{sample_id} does not exist.")
-            return ""
-        return self._status_getter("sample_status", "samples", "sample_id", "sample_statuses", sample_id)
+        if not self.has(sample_id, log=log):
+            return self.logger.log(f"Error: Sample #{sample_id} does not exist.", "") if log else ""
+        return self._status_getter("sample", sample_id)
 
     @multimethod
-    def get_info(self, sample_id: int):
+    def get_info(self, sample_id: int, log=False):
         """
-        -- logging --
         Returns a dictionary containing kit information for the kit with the given kit_id.
         If the kit does not exist, returns empty dict.
         """
         sample_info_dict = {}
         if not self.has(sample_id):
-            self.logger.log_message(f"Error: Sample #{sample_id} does not exist.")
-            return sample_info_dict
+            return self.logger.log(f"Error: Sample #{sample_id} does not exist.", sample_info_dict) if log else sample_info_dict
 
         with self.db as (conn, cursor):
-            cursor.execute("SELECT research_id, qr_id, collected_at, uploaded_at, sent_to_lab_at, delivered_to_lab_at, sample_status, gps, weather_conditions, user_comment FROM samples WHERE sample_id = %s", (sample_id,))
+            cursor.execute("""
+                SELECT research_id, qr_id, owner_id, collected_at, created_at, updated_at, sent_to_lab_at, delivered_to_lab_at, gps, weather_conditions, comment, photo
+                FROM "sample"
+                WHERE id = %s
+            """, (sample_id,))
             kit_data = cursor.fetchone()
 
             if kit_data:
                 sample_info_dict['research_id'] = kit_data[0]
                 sample_info_dict['qr_id'] = kit_data[1]
-                sample_info_dict['collected_at'] = kit_data[2].strftime("%Y-%m-%d, %H:%M:%S") if kit_data[2] else None
-                sample_info_dict['uploaded_at'] = kit_data[3].strftime("%Y-%m-%d, %H:%M:%S") 
-                sample_info_dict['sent_to_lab_at'] = kit_data[4].strftime("%Y-%m-%d, %H:%M:%S") if kit_data[4] else None
-                sample_info_dict['delivered_to_lab_at'] = kit_data[5].strftime("%Y-%m-%d, %H:%M:%S") if kit_data[5] else None
-
-                cursor.execute("SELECT status_key FROM sample_statuses WHERE status_id = %s", (kit_data[6],))
-                kit_status_key = cursor.fetchone()[0]
-                sample_info_dict['sample_status'] = kit_status_key
-                sample_info_dict['gps'] = kit_data[7]
-                sample_info_dict['weather_conditions'] = kit_data[8]
-                sample_info_dict['user_comment'] = kit_data[9]
+                sample_info_dict['sample_status'] = self.status_of(sample_id)
+                sample_info_dict['owner_id'] = kit_data[2]
+                sample_info_dict['collected_at'] = kit_data[3].strftime("%Y-%m-%d, %H:%M:%S")
+                sample_info_dict['created_at'] = kit_data[4].strftime("%Y-%m-%d, %H:%M:%S")
+                sample_info_dict['updated_at'] = kit_data[5].strftime("%Y-%m-%d, %H:%M:%S") 
+                sample_info_dict['sent_to_lab_at'] = kit_data[6].strftime("%Y-%m-%d, %H:%M:%S") if kit_data[6] else None
+                sample_info_dict['delivered_to_lab_at'] = kit_data[7].strftime("%Y-%m-%d, %H:%M:%S") if kit_data[7] else None
+                sample_info_dict['gps'] = ",".join(kit_data[8][1:-1].split(", "))
+                sample_info_dict['weather_conditions'] = kit_data[9]
+                sample_info_dict['user_comment'] = kit_data[10]
+                sample_info_dict['photo'] = True if kit_data[11] else None
         return sample_info_dict
 
     
@@ -83,13 +98,13 @@ class SamplesManager(AbstractDBManager):
 
     @multimethod
     def new(self,
-        qr_bytes: bytes,
+        qr_unique_hex: str,
         research_name: str,
         collected_at: datetime.datetime,
         gps: tuple[float, float],
+        log=False
     ):
         """
-        -- logging --
         Returns sample_id if successfull
         Inserts a new sample into the database with the provided information.
         Checks if the research is ongoing, the QR code is valid and not used, the kit is activated, and the user is a volunteer.
@@ -100,83 +115,96 @@ class SamplesManager(AbstractDBManager):
         kits = KitsManager(self.logdata, logfile=self.logfile)
         researches = ResearchesManager(self.logdata, logfile=self.logfile)
 
-        if collected_at > datetime.datetime.now():
-            self.logger.log_message(f"Warn : The sample seems to be collected in future at {collected_at}.")
+        if collected_at > datetime.datetime.now() and log:
+            self.logger.log(f"Warn : The sample seems to be collected in future at {collected_at}.")
 
         research_info = researches.get_info(research_name)
         if not research_info:
-            self.logger.log_message(f"Error: Invalid research name '{research_name}'.")
-            return False
+            return self.logger.log(f"Error: Invalid research name '{research_name}'.", False) if log else False
 
         if research_info["research_status"] != "ongoing":
-            self.logger.log_message(f"Error: Research '{research_name}' is not in 'ongoing' status.")
-            return False
+            return self.logger.log(f"Error: Research '{research_name}' is not in 'ongoing' status.", False) if log else False
 
-        qr_info = self.get_qr_info(qr_bytes)
+        qr_info = self.get_qr_info(qr_unique_hex)
         if not qr_info:
-            self.logger.log_message(f"Error: No such QR in database.")
-            return False
+            return self.logger.log(f"Error: No such QR in database.", False) if log else False
         
         qr_id = qr_info["qr_id"]
         if qr_info["is_used"]:
-            self.logger.log_message(f"Error: QR #{qr_id} already 'is_used'.")
-            return False
+            return self.logger.log(f"Error: QR #{qr_id} already 'is_used'.", False) if log else False
         
         kit_id = qr_info["kit_id"]
         if not kit_id:
-            self.logger.log_message(f"Error: QR code is not assigned to any kit.")
-            return False
+            return self.logger.log(f"Error: QR code is not assigned to any kit.", False) if log else False
 
         kit_info = kits.get_info(kit_id)
         if not kit_info:
-            self.logger.log_message(f"Error: No #{kit_id} was found (very strange!).")
-            return False
+            return self.logger.log(f"Error: No #{kit_id} was found (very strange!).", False) if log else False
         
         kit_owner = kit_info["owner"]
         if not kit_owner:
-            self.logger.log_message(f"Error: Kit #{kit_id} has no owner.")
-            return False
+            return self.logger.log(f"Error: Kit #{kit_id} has no owner.", False) if log else False
 
         if kit_info["kit_status"] != "activated":
-            self.logger.log_message(f"Error: Kit associated with QR hasn't been activated.")
-            return False
+            return self.logger.log(f"Error: Kit associated with QR hasn't been activated.", False) if log else False
 
-        kit_owner_status = users.status_of(kit_owner["user_name"])
+        owner_name = kit_owner["user_name"]
+        kit_owner_status = users.status_of(owner_name)
         if kit_owner_status not in ['admin', 'volunteer']:
-            self.logger.log_message(f"Error: Owner of kit '{kit_owner}' is of status '{kit_owner_status}', which is not enough to publish samples.")
-            return False
+            return self.logger.log(f"Error: Owner of kit '{kit_owner}' is of status '{kit_owner_status}', which is not enough to publish samples.", False) if log else False
         
+        if (abs(gps[0]) > 90.0 or abs(gps[1]) > 180.0):
+            return self.logger.log(f"Error: GPS coordinates {gps} are out of bounds.", False) if log else False
+    
+        research_id = research_info['research_id']
+        owner_id = kit_owner["user_id"]
         with self.db as (conn, cursor):
+
+            # Pushing the sample into the database
             cursor.execute("""
-                INSERT INTO samples (research_id, qr_id, collected_at, gps)
-                VALUES (%s, %s, %s, POINT(%s))
-                RETURNING sample_id
-            """, (research_info['research_id'], qr_id, collected_at, str(gps)))
+                INSERT INTO "sample"
+                (research_id, owner_id, qr_id, collected_at, gps)
+                VALUES (%s, %s, %s, %s, POINT(%s))
+                RETURNING id
+            """, (research_id, owner_id, qr_id, collected_at, str(gps)))
             sample_id = cursor.fetchone()[0]
-            cursor.execute("UPDATE sample_statuses SET n = n + 1 WHERE status_id = 1")
-            cursor.execute("UPDATE qrs SET is_used = true WHERE qr_id = %s", (qr_id,))
-            self.logger.log_message(f"Info : QR #{qr_id} is now 'is_used'")
-            cursor.execute("UPDATE users SET n_samples_collected = n_samples_collected + 1 WHERE user_id = %s RETURNING n_samples_collected", (kit_owner["user_id"],))
+            log and self.logger.log("Info : New sample #{sample_id} inserted successfully.")
+
+            # Updating the QR code status
+            cursor.execute("""
+                UPDATE "qr"
+                SET is_used = true
+                WHERE id = %s
+            """, (qr_id,))
+            log and self.logger.log(f"Info : QR #{qr_id} is now 'is_used'")
+
+            # Updating the personal counter of the user
+            cursor.execute("""
+                UPDATE "user"
+                SET n_samples_collected = n_samples_collected + 1
+                WHERE id = %s
+                RETURNING n_samples_collected
+            """, (owner_id,))
             new_personal_score = cursor.fetchone()[0]
-            self.logger.log_message(f"Info : Personal counter of user '{kit_owner['user_name']}' is now {new_personal_score}")
+            log and self.logger.log(f"Info : Personal counter of user '{owner_name}' is now {new_personal_score}")
+
+            # Updating the research counter
+            cursor.execute("""
+                UPDATE "research"
+                SET n_samples = n_samples + 1
+                WHERE id = %s
+                RETURNING n_samples
+            """, (research_id,))
+            n_samples_in_research = cursor.fetchone()[0]
+            log and self.logger.log(f"Info : Counter of collected samples for '{research_name}' is now {n_samples_in_research}")
+
             conn.commit()
 
-        self.logger.log_message("Info : New sample inserted successfully.")
         return sample_id
-
-    @multimethod
-    def new(self,
-        qr_hex: str,
-        research_name: str,
-        collected_at: datetime.datetime,
-        gps: tuple[float, float],
-    ):
-        qr_bytes = bytes.fromhex(qr_hex)
-        return self.new(qr_bytes, research_name, collected_at, gps)
     
     @multimethod
     def change_status(self, sample_id: int, new_status: str):
-        return self._change_status("sample_id", "samples", "sample_status", "sample_statuses", sample_id, new_status)
+        return self._change_status("sample", sample_id, new_status)
         
     @multimethod
     def push_weather(self, sample_id: int, weather: str):
@@ -198,7 +226,7 @@ class SamplesManager(AbstractDBManager):
     @multimethod
     def get_photo(self, sample_id: int):
         if not self.has(sample_id):
-            self.logger.log_message(f"Error: Sample #{sample_id} does not exist.")
+            self.logger.log(f"Error: Sample #{sample_id} does not exist.")
             return b''
 
         with self.db as (conn, cursor):
