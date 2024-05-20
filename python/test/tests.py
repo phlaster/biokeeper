@@ -39,7 +39,7 @@ def new_user(DBM):
     username = rstr()
     
     DBM
-    assert not DBM.users.has(username)
+    assert not DBM.users.has(username, log=True)
     n_users = DBM.users.count("all")
     n_admins = DBM.users.count("admin")
     n_volunteers = DBM.users.count("volunteer")
@@ -47,20 +47,20 @@ def new_user(DBM):
     assert DBM.users.count() == n_users == n_admins + n_volunteers + n_observers
 
     # Counting
-    user_1_id = DBM.users.new(username, rstr())
+    user_1_id = DBM.users.new(username, rstr(), log=True)
     assert isinstance(user_1_id, int)
-    assert DBM.users.has(username)
+    assert DBM.users.has(username, log=True)
     assert DBM.users.count() == n_users + 1
     assert DBM.users.count("observer") == n_observers + 1
 
     # Status checks
-    assert DBM.users.status_of(username) == "observer"
-    assert not DBM.users.change_status(username, "wrongstatus")
+    assert DBM.users.status_of(username, log=True) == "observer"
+    assert not DBM.users.change_status(username, "wrongstatus", log=True)
     assert DBM.users.count("observer") == n_observers + 1
-    assert DBM.users.change_status(username, "admin") == "admin"
+    assert DBM.users.change_status(username, "admin", log=True) == "admin"
     assert DBM.users.count("observer") == n_observers
     assert DBM.users.count("admin") == n_admins + 1
-    assert DBM.users.status_of(username) == "admin"
+    assert DBM.users.status_of(username, log=True) == "admin"
     
 def user_password_validation(DBM):
     assert not DBM.users._validate_password("", "username")
@@ -69,13 +69,19 @@ def user_password_validation(DBM):
 
     username = rstr()
     password = rstr()
-    DBM.users.new(username, password)
+    DBM.users.new(username, password, log=True)
     # Password match
-    assert not DBM.users.password_match(username, rstr())
-    assert not DBM.users.password_match(username, "")
-    assert not DBM.users.password_match(username, username)
-    assert not DBM.users.password_match(password, password)
-    assert DBM.users.password_match(username, password)
+    assert not DBM.users.password_match(username, rstr(), log=True)
+    assert not DBM.users.password_match(username, "", log=True)
+    assert not DBM.users.password_match(username, username, log=True)
+    assert not DBM.users.password_match(password, password, log=True)
+    assert DBM.users.password_match(username, password, log=True)
+
+    # Password change
+    new_password = rstr()
+    assert DBM.users.change_user_password(username, new_password, log=True)
+    assert not DBM.users.password_match(username, password, log=True)
+    assert DBM.users.password_match(username, new_password, log=True)
 
 def user_renaming(DBM):
     # Changing user_name
@@ -83,13 +89,12 @@ def user_renaming(DBM):
     user_name_2 = rstr()
     passwd_1 = rstr()
 
-    DBM.users.new(user_name_1, passwd_1)
+    DBM.users.new(user_name_1, passwd_1, log=True)
     user_1_info = DBM.users.get_info(user_name_1)
 
-    assert DBM.users.rename(user_name_1, user_name_2) == user_name_2
-    assert not DBM.users.has(user_name_1)
-    assert DBM.users.has(user_name_2)
-    assert not DBM.users.has(user_name_1)
+    assert DBM.users.rename(user_name_1, user_name_2, log=True) == user_name_2
+    assert not DBM.users.has(user_name_1, log=True)
+    assert DBM.users.has(user_name_2, log=True)
 
     user_2_info = DBM.users.get_info(user_name_2)
     # shared_items = {k: user_1_info[k] for k in user_1_info if k in user_2_info and user_1_info[k] == user_2_info[k]}
@@ -98,26 +103,26 @@ def user_renaming(DBM):
 
 
     # Password match after renaming
-    assert DBM.users.password_match(user_name_2, passwd_1)
-    assert not DBM.users.password_match(user_name_2, rstr())
+    assert DBM.users.password_match(user_name_2, passwd_1, log=True)
+    assert not DBM.users.password_match(user_name_2, rstr(), log=True)
 
 
     # Password match after renaming
-    assert DBM.users.password_match(user_name_2, passwd_1)
-    assert not DBM.users.password_match(user_name_2, rstr())
+    assert DBM.users.password_match(user_name_2, passwd_1, log=True)
+    assert not DBM.users.password_match(user_name_2, rstr(), log=True)
 
 def user_2_info(DBM):
     username = rstr()
     new_name = rstr()
 
-    DBM.users.new(username, rstr())
-    DBM.users.change_status(username, 'volunteer')
+    DBM.users.new(username, rstr(), log=True)
+    DBM.users.change_status(username, 'volunteer', log=True)
     user_info = DBM.users.get_info(username)
     assert isinstance(user_info, dict)
 
     # assert user_info["created_at"] < user_info["updated_at"]
     assert user_info["n_samples_collected"] == 0
-    assert user_info["user_status"] == DBM.users.status_of(username) == "volunteer"
+    assert user_info["user_status"] == DBM.users.status_of(username, log=True) == "volunteer"
     assert user_info["user_id"] >= 1
     assert DBM.users.get_all()[username] == user_info
     assert DBM.users.count() == len(DBM.users.get_all())
@@ -125,8 +130,8 @@ def user_2_info(DBM):
 
 def researches(DBM):
     research_user = rstr()
-    research_user_id = DBM.users.new(research_user, rstr())
-    assert DBM.users.status_of(research_user) == "observer"
+    research_user_id = DBM.users.new(research_user, rstr(), log=True)
+    assert DBM.users.status_of(research_user, log=True) == "observer"
     
     research_name = rstr()
     day_start = datetime.date(2020, 1, 1)
@@ -140,22 +145,22 @@ def researches(DBM):
     assert n_res_pending + n_res_ongoing <= n_res
 
     # Research creation
-    assert not DBM.researches.new(research_name, research_user, day_start) # user has no privilege
-    DBM.users.change_status(research_user, "admin")
-    assert DBM.researches.new(research_name, research_user, day_start)
-    assert DBM.researches.has(research_name)
-    assert not DBM.researches.new(research_name, research_user, day_start) # same name collision
+    assert not DBM.researches.new(research_name, research_user, day_start, log=True) # user has no privilege
+    DBM.users.change_status(research_user, "admin", log=True)
+    assert DBM.researches.new(research_name, research_user, day_start, log=True)
+    assert DBM.researches.has(research_name, log=True)
+    assert not DBM.researches.new(research_name, research_user, day_start, log=True) # same name collision
     assert DBM.researches.count("all") == n_res + 1
     assert DBM.researches.count("pending") == n_res_pending + 1
     assert DBM.researches.count("ongoing") == n_res_ongoing
 
     # Changing research status
-    research_status = DBM.researches.status_of(research_name)
+    research_status = DBM.researches.status_of(research_name, log=True)
     assert research_status == "pending"
-    assert not DBM.researches.change_status(research_name, "nonexisting status")
+    assert not DBM.researches.change_status(research_name, "nonexisting status", log=True)
     assert research_status == "pending"
-    assert DBM.researches.change_status(research_name, "ongoing") == "ongoing"
-    assert DBM.researches.status_of(research_name) == "ongoing"
+    assert DBM.researches.change_status(research_name, "ongoing", log=True) == "ongoing"
+    assert DBM.researches.status_of(research_name, log=True) == "ongoing"
     assert DBM.researches.count("all") == n_res + 1
     assert DBM.researches.count("pending") == n_res_pending
     assert DBM.researches.count("ongoing") == n_res_ongoing + 1
@@ -164,7 +169,7 @@ def researches(DBM):
     research_info = DBM.researches.get_info(research_name)
     assert type(research_info) == dict
     assert research_info["research_id"] >= 1
-    assert research_info["research_status"] == DBM.researches.status_of(research_name) == "ongoing"
+    assert research_info["research_status"] == DBM.researches.status_of(research_name, log=True) == "ongoing"
     # assert research_info["created_at"] < research_info["updated_at"]
     assert research_info["created_by"] == research_user_id
     assert research_info["n_samples"] == 0
@@ -179,9 +184,9 @@ def researches(DBM):
     bad_day_end = datetime.date(2019, 1, 1) # less than day_start
     good_day_end = datetime.date(2025, 1, 1)
 
-    assert DBM.researches.change_comment(research_name, random_comment)
-    assert not DBM.researches.change_day_end(research_name, bad_day_end)
-    assert DBM.researches.change_day_end(research_name, good_day_end)
+    assert DBM.researches.change_comment(research_name, random_comment, log=True)
+    assert not DBM.researches.change_day_end(research_name, bad_day_end, log=True)
+    assert DBM.researches.change_day_end(research_name, good_day_end, log=True)
 
     research_updated_info = DBM.researches.get_info(research_name)
     # assert research_updated_info["day_end"] == good_day_end
@@ -190,26 +195,26 @@ def researches(DBM):
 def kits(DBM):
     # Creating
     n_qrs = 10
-    kit_id = DBM.kits.new(n_qrs)
+    kit_id = DBM.kits.new(n_qrs, log=True)
     assert kit_id >= 1
-    assert DBM.kits.has(kit_id)
-    assert not DBM.kits.has(99999999)
+    assert DBM.kits.has(kit_id, log=True)
+    assert not DBM.kits.has(99999999, log=True)
     
     # Change status
-    assert not DBM.kits.status_of(999999999)
-    kit_status = DBM.kits.status_of(kit_id)
+    assert not DBM.kits.status_of(999999999, log=True)
+    kit_status = DBM.kits.status_of(kit_id, log=True)
     assert DBM.kits.has_status(kit_status)
     assert kit_status == "created"
-    assert not DBM.kits.change_status(kit_id, "rubbish")
-    assert not DBM.kits.change_status(-1, "rubbish")
-    assert DBM.kits.change_status(kit_id, "sent") == "sent"
+    assert not DBM.kits.change_status(kit_id, "rubbish", log=True)
+    assert not DBM.kits.change_status(-1, "rubbish", log=True)
+    assert DBM.kits.change_status(kit_id, "sent", log=True) == "sent"
     
     # qrs
     assert len(set(DBM.kits.get_qrs(kit_id))) == n_qrs
-    kit_new_id = DBM.kits.new(n_qrs)
-    assert DBM.kits.has(kit_new_id)
-    assert not DBM.kits.status_of(kit_new_id) == DBM.kits.status_of(kit_id)
-    assert set(DBM.kits.get_qrs(kit_id)).intersection(set(DBM.kits.get_qrs(kit_new_id))) == set()
+    kit_new_id = DBM.kits.new(n_qrs, log=True)
+    assert DBM.kits.has(kit_new_id, log=True)
+    assert not DBM.kits.status_of(kit_new_id) == DBM.kits.status_of(kit_id, log=True)
+    assert set(DBM.kits.get_qrs(kit_id, log=True)).intersection(set(DBM.kits.get_qrs(kit_new_id))) == set()
 
     # info
     kit_1_info = DBM.kits.get_info(kit_id)
@@ -230,14 +235,14 @@ def kits(DBM):
     # Kit owners
     assert kit_1_info['owner'] == None
     owner_name = rstr()
-    owner_id = DBM.users.new(owner_name, rstr())
+    owner_id = DBM.users.new(owner_name, rstr(), log=True)
     assert not DBM.kits.change_owner(kit_id, rstr()) # wrong user_name
     assert DBM.kits.change_owner(kit_id, owner_name) == kit_id
     assert DBM.kits.get_info(kit_id)['owner'] == {'user_id': owner_id, 'user_name': owner_name}
 
 def qrcodes(DBM):
-    new_kit = DBM.kits.new(10)
-    qrs = DBM.kits.get_qrs(new_kit)
+    new_kit = DBM.kits.new(10, log=True)
+    qrs = DBM.kits.get_qrs(new_kit, log=True)
     assert isinstance(qrs, dict)
     for id in qrs:
         binary = qrs[id]
@@ -246,25 +251,25 @@ def qrcodes(DBM):
         assert DBM.kits.get_qr_info(binary)['kit_id'] == new_kit
 
 def samples(DBM):
-    assert not DBM.samples.new("589461abcbfc6451a586", rstr(), datetime.datetime.now(datetime.timezone.utc), (2.4, 2.1))
+    assert not DBM.samples.new("589461abcbfc6451a586", rstr(), datetime.datetime.now(datetime.timezone.utc), (2.4, 2.1), log=True)
 
     research_user = rstr()
-    research_user_id = DBM.users.new(research_user, rstr())
-    assert DBM.users.change_status(research_user, "admin")
+    research_user_id = DBM.users.new(research_user, rstr(), log=True)
+    assert DBM.users.change_status(research_user, "admin", log=True)
     
     research_name = rstr()
     day_start = datetime.date(2020, 1, 1)
-    research_id = DBM.researches.new(research_name, research_user, day_start)
+    research_id = DBM.researches.new(research_name, research_user, day_start, log=True)
 
-    kit_id = DBM.kits.new(5)
+    kit_id = DBM.kits.new(5, log=True)
     some_qr_bytes = list(DBM.kits.get_qrs(kit_id).values())[2]
 
-    assert not DBM.samples.new(some_qr_bytes, research_name, datetime.datetime.now(datetime.timezone.utc), (2.4, 2.1)) # research is not ongoing
-    DBM.researches.change_status(research_name, "ongoing")
-    assert not DBM.samples.new(some_qr_bytes, research_name, datetime.datetime.now(datetime.timezone.utc), (2.4, 2.1)) # kit has no owner
+    assert not DBM.samples.new(some_qr_bytes, research_name, datetime.datetime.now(datetime.timezone.utc), (2.4, 2.1), log=True) # research is not ongoing
+    DBM.researches.change_status(research_name, "ongoing", log=True)
+    assert not DBM.samples.new(some_qr_bytes, research_name, datetime.datetime.now(datetime.timezone.utc), (2.4, 2.1), log=True) # kit has no owner
     DBM.kits.change_owner(kit_id, research_user)
-    assert not DBM.samples.new(some_qr_bytes, research_name, datetime.datetime.now(datetime.timezone.utc), (2.4, 2.1)) # kit has not been activated
-    DBM.kits.change_status(kit_id, "activated")
+    assert not DBM.samples.new(some_qr_bytes, research_name, datetime.datetime.now(datetime.timezone.utc), (2.4, 2.1), log=True) # kit has not been activated
+    DBM.kits.change_status(kit_id, "activated", log=True)
 
     n_collected = DBM.users.get_info(research_user)["n_samples_collected"]
     assert not DBM.kits.get_qr_info(some_qr_bytes)["is_used"]
@@ -276,40 +281,40 @@ def samples(DBM):
     assert n_samples == DBM.samples.count("all")
     assert n_samples_delivered + n_samples_sent + n_samples_collected == n_samples
 
-    assert not DBM.samples.new(some_qr_bytes, research_name, datetime.datetime.now(datetime.timezone.utc), (-95.9, 181.9)) # incorrect coordinates
-    sample_id = DBM.samples.new(some_qr_bytes, research_name, datetime.datetime.now(datetime.timezone.utc), (2.4, 2.1)) # the PUSH
+    assert not DBM.samples.new(some_qr_bytes, research_name, datetime.datetime.now(datetime.timezone.utc), (-95.9, 181.9), log=True) # incorrect coordinates
+    sample_id = DBM.samples.new(some_qr_bytes, research_name, datetime.datetime.now(datetime.timezone.utc), (2.4, 2.1), log=True) # the PUSH
     assert isinstance(sample_id, int)
     assert DBM.users.get_info(research_user)["n_samples_collected"] == n_collected + 1 == 1
     assert DBM.kits.get_qr_info(some_qr_bytes)["is_used"]
-    assert not DBM.samples.new(some_qr_bytes, research_name, datetime.datetime.now(datetime.timezone.utc), (2.4, 2.1)) # QR is used
+    assert not DBM.samples.new(some_qr_bytes, research_name, datetime.datetime.now(datetime.timezone.utc), (2.4, 2.1), log=True) # QR is used
 
     assert n_samples + 1 == DBM.samples.count("all")
     assert DBM.samples.count("collected") == n_samples_collected + 1
 
-    assert DBM.samples.has(sample_id)
-    assert not DBM.samples.has(sample_id+1)
+    assert DBM.samples.has(sample_id, log=True)
+    assert not DBM.samples.has(sample_id+1, log=True)
 
     assert DBM.samples.has_status("collected")
     assert DBM.samples.has_status("sent")
     assert DBM.samples.has_status("delivered")
     assert not DBM.samples.has_status("lost")
 
-    assert DBM.samples.status_of(sample_id) == "collected"
-    assert not DBM.samples.change_status(sample_id, "rubbish")
-    assert DBM.samples.status_of(sample_id) == "collected"
-    assert DBM.samples.change_status(sample_id, "sent")
-    assert DBM.samples.status_of(sample_id) == "sent"
+    assert DBM.samples.status_of(sample_id, log=True) == "collected"
+    assert not DBM.samples.change_status(sample_id, "rubbish", log=True)
+    assert DBM.samples.status_of(sample_id, log=True) == "collected"
+    assert DBM.samples.change_status(sample_id, "sent", log=True)
+    assert DBM.samples.status_of(sample_id, log=True) == "sent"
     assert DBM.samples.count("sent") == n_samples_sent + 1
     assert n_samples + 1 == DBM.samples.count("all")
 
 def dispatch_testing(DBM):
     username = rstr()
     passwd = rstr()
-    user_id = DBM.users.new(username, passwd)
+    user_id = DBM.users.new(username, passwd, log=True)
 
-    assert user_id == DBM.users.has(username)
-    assert DBM.users.password_match(username, passwd)
-    assert DBM.users.password_match(user_id, passwd)
+    assert user_id == DBM.users.has(username, log=True)
+    assert DBM.users.password_match(username, passwd, log=True)
+    assert DBM.users.password_match(user_id, passwd, log=True)
 
 def gte(DBM):
     example = DBM.generate_test_example()
@@ -320,23 +325,23 @@ def gte(DBM):
     DBM.join_threads()
 
 def main():
-    logfile="test_strange.log"
+    logfile="tests.log"
     DBM = DBManager(LOGDATA, logfile)
     DBM.logger.clear_logs()
     DBM.logger.log("Info : Test started!")
     test_time = time()
 
     try:
-        # existing_statuses(DBM)
-        # new_user(DBM)
-        # user_password_validation(DBM)
-        # user_2_info(DBM)
-        # user_renaming(DBM)
-        # researches(DBM)
-        # kits(DBM)
-        # qrcodes(DBM)
-        # samples(DBM)
-        # dispatch_testing(DBM)
+        existing_statuses(DBM)
+        new_user(DBM)
+        user_password_validation(DBM)
+        user_2_info(DBM)
+        user_renaming(DBM)
+        researches(DBM)
+        kits(DBM)
+        qrcodes(DBM)
+        samples(DBM)
+        dispatch_testing(DBM)
         gte(DBM)
         print(f"All tests passed in {round(time()-test_time, ndigits=1)} s.")
     except Exception as e:
