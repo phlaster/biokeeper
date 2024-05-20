@@ -87,7 +87,7 @@ class SamplesManager(AbstractDBManager):
                 sample_info_dict['sent_to_lab_at'] = kit_data[6].strftime("%Y-%m-%d %H:%M:%S %Z") if kit_data[6] else None
                 sample_info_dict['delivered_to_lab_at'] = kit_data[7].strftime("%Y-%m-%d %H:%M:%S %Z") if kit_data[7] else None
                 sample_info_dict['gps'] = kit_data[8] #",".join(kit_data[8][1:-1].split(", "))
-                sample_info_dict['weather_conditions'] = kit_data[9]
+                sample_info_dict['weather_conditions'] = True if kit_data[9] else None
                 sample_info_dict['user_comment'] = kit_data[10]
                 sample_info_dict['photo'] = True if kit_data[11] else None
         return sample_info_dict
@@ -224,14 +224,14 @@ class SamplesManager(AbstractDBManager):
         return self._update_sample(sample_id, column_name="photo", value=photo_bytes)
 
     @multimethod
-    def get_photo(self, sample_id: int):
+    def get_photo(self, sample_id: int, log=False):
         if not self.has(sample_id):
-            self.logger.log(f"Error: Sample #{sample_id} does not exist.")
-            return b''
-
-        with self.db as (conn, cursor):
-            cursor.execute("SELECT photo FROM samples WHERE sample_id = %s", (sample_id,))
-            photo = cursor.fetchone()[0]
-        
+            return self.logger.log(f"Error: Sample #{sample_id} does not exist.", "") if log else ""
+        photo = self._SELECT("photo", "sample", "id", sample_id)
         return photo if photo else b''
 
+    def get_weather(self, sample_id: int, log=False):
+        if not self.has(sample_id):
+            return self.logger.log(f"Error: Sample #{sample_id} does not exist.", "") if log else ""
+        weather = self._SELECT("weather_conditions", "sample", "id", sample_id)
+        return weather if weather else ""
