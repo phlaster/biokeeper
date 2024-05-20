@@ -39,7 +39,7 @@ class SamplesManager(AbstractDBManager):
         return id
 
     @multimethod
-    def has(self, qr_unique_hex: str):
+    def has(self, qr_unique_hex: str, log=False):
         qr_info = self.get_qr_info(qr_unique_hex)
         if not qr_info:
             return self.logger.log(f"Error: Wrong QR hex: '{qr_unique_hex}'", 0) if log else 0
@@ -203,8 +203,8 @@ class SamplesManager(AbstractDBManager):
         return sample_id
     
     @multimethod
-    def change_status(self, sample_id: int, new_status: str):
-        return self._change_status("sample", sample_id, new_status)
+    def change_status(self, sample_id: int, new_status: str, log=False):
+        return self._change_status("sample", sample_id, new_status, log=log)
         
     @multimethod
     def push_weather(self, sample_id: int, weather: str):

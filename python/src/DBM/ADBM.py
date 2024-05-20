@@ -20,7 +20,6 @@ class AbstractDBManager(ABC):
             cursor.execute(query, (status_key,) if status_key != "all" else ())
             return cursor.fetchone()[0]
 
-
     def _is_status_of(self, table_prefix: str, status: str) -> tuple[int, str] | tuple:
         """
         Check if a given status exists for a table with given `table_prefix`.
@@ -90,7 +89,6 @@ class AbstractDBManager(ABC):
 
         log and self.logger.log(f"Info : {table} '{identifier}' status changed to '{new_status}'")
         return new_status
-
 
     def _all_getter(self, identifier_name, table_name):
         """

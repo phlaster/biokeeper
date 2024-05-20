@@ -87,7 +87,19 @@ class DBManager:
         self.samples = SamplesManager(logdata, logfile=logfile)
         self.weather = Weather(past_days=3)
         self._threads = []
-    
+
+    def _async_weather_request(self, sample_id, log=False):
+        if not self.samples.has(sample_id):
+            return self.logger.log(f"Sample #{sample_id} not found") if log else None
+        sample_info = self.samples.get_info(sample_id)
+        collected_at = datetime.datetime.strptime(
+            sample_info['collected_at'], "%Y-%m-%d %H:%M:%S %Z%z")
+        latitude, longitude = map(float, sample_info['gps'].strip("()").split(","))
+        weather = self.weather.get_weather((latitude, longitude), collected_at)
+        if weather:
+            self.samples.push_weather(sample_id, weather)
+
+
     def generate_test_example(self):
         rstr = lambda k=10: ''.join(random.choices(string.ascii_uppercase + string.digits, k=k))
         user_name = rstr()
@@ -136,26 +148,14 @@ class DBManager:
 
         return body
 
-    def _async_weather_request(self, sample_id: int):
-        def parse_coordinates(coordinate_string):
-            coordinate_string = coordinate_string.strip("()")
-            latitude, longitude = coordinate_string.split(",")
-            latitude = float(latitude.strip())
-            longitude = float(longitude.strip())
-            return (latitude, longitude)
 
-        sample_info = self.samples.get_info(sample_id)
-        gps = parse_coordinates(sample_info['gps'])
-        print(sample_info['collected_at'])
-        collected_at = datetime.datetime.strptime(sample_info['collected_at'], "%Y-%m-%d %H:%M:%S %Z%z")
-        weather = self.weather.get_weather(gps, collected_at)
-        self.samples.push_weather(sample_id, weather)
 
-    def attach_weather_to_sample(self, sample_id: int):
-        t = Thread(target=self._async_weather_request, args=(sample_id,))
+    def attach_weather_to_sample(self, sample_id: int, log=False):
+        t = Thread(target=self._async_weather_request, args=(sample_id, log))
         t.start()
         self._threads.append(t)
 
     def join_threads(self):
         for t in self._threads:
             t.join()
+        self._threads = []

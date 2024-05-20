@@ -6,14 +6,14 @@ from multimethod import multimethod
 
 class UsersManager(AbstractDBManager):
     @multimethod
-    def _validate_password(self, password: str, user_name: str, log=False):
+    def _validate_password(self, password: str, identifier: str, log=False):
         """
         Simplest validation possible. Rest is for the frontenders
         """
         if len(password) > 4:
             return True
         else:
-            return self.logger.log(f"Error: Password validation for '{user_name}' failed.", False) if log else False
+            return self.logger.log(f"Error: Password validation for '{identifier}' failed.", False) if log else False
     
     @multimethod
     def _validate_user_name(self, user_name: str, log=False):
@@ -98,11 +98,6 @@ class UsersManager(AbstractDBManager):
             user_info_dict['n_samples_collected'] = user_data[4]
         return user_info_dict
 
-    @multimethod
-    def get_info(self, user_id: int, log=False):
-        username = self.has(user_id, log=log)
-        return self.status_of(username, log=log)
-
     def get_all(self):
         return self._all_getter("name", "user")
 
@@ -167,15 +162,15 @@ class UsersManager(AbstractDBManager):
         return self.rename(self, old_user_name, new_user_name, log=log)
     
     @multimethod
-    def change_user_password(self, user_name: str, new_password: str, log=False):
+    def change_user_password(self, identifier, new_password: str, log=False):
         """
-        -- logging --
         returns False if unsuccessfull
         """
-        if not self.has(user_name, log=log):
-            return self.logger.log(f"Error: Can't change password of a nonexisting user '{user_name}'.", False) if log else False
+        user_id = self.has(identifier, log=log)
+        if not user_id:
+            return self.logger.log(f"Error: Can't change password of a nonexisting user '{identifier}'.", False) if log else False
         
-        if not self._validate_password(new_password, user_name, log=log):
+        if not self._validate_password(new_password, identifier, log=log):
             return False
         
         with self.db as (conn, cursor):
@@ -183,15 +178,11 @@ class UsersManager(AbstractDBManager):
             cursor.execute("""
                 UPDATE "user"
                 SET password_hash = %s, password_salt = %s
-                WHERE user_name = %s;
-            """, (hashed_password, salt, user_name))
+                WHERE id = %s;
+            """, (hashed_password, salt, user_id))
             conn.commit()
-        return self.logger.log(f"Info : Changed password for user '{user_name}'.", True) if log else True
+        return self.logger.log(f"Info : Changed password for user #{user_id}.", True) if log else True
 
-    @multimethod
-    def change_user_password(self, user_id: str, new_password: str, log=False):
-        user_name = self.has(user_id)
-        return self.change_user_password(user_name, new_password, log=log)
     
     def password_match(self, identifier, password: str, log=False):
         user_id = self.has(identifier, log=log)
