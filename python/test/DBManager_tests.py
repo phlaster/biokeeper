@@ -325,7 +325,7 @@ def gte(DBM):
     DBM.join_threads()
 
 def main():
-    logfile="tests.log"
+    logfile="DBManager_tests.log"
     DBM = DBManager(LOGDATA, logfile)
     DBM.logger.clear_logs()
     DBM.logger.log("Info : Test started!")

@@ -68,10 +68,10 @@ We used `cweijan.vscode-database-client2` VSCode extension and `DBeaver` GUI app
 
 After db is up and running, you can run tests with (don't forget to enable venv):
 ```sh
-python python/test/tests.py  
+python python/test/DBManager_tests.py  
 ```
 which takes around 20s.
 
-Detailed logs can be found in `tests.log` file.
+Detailed logs can be found in `DBManager_tests.log` file.
 
 
