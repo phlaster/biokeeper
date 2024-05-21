@@ -38,14 +38,14 @@ class DBManager:
         self.samples = SamplesManager(logdata, logfile=logfile)
         self.weather = Weather(past_days=3)
 
-    def _weather_request(self, sample_id, log=False):
+    def complete_weather_request(self, sample_id, log=False):
         if not self.samples.has(sample_id):
             return self.logger.log(f"Sample #{sample_id} not found") if log else None
         sample_info = self.samples.get_info(sample_id)
         collected_at = datetime.datetime.strptime(
             sample_info['collected_at'], "%Y-%m-%d %H:%M:%S %Z%z")
         latitude, longitude = map(float, sample_info['gps'].strip("()").split(","))
-        weather = self.weather.get_weather((latitude, longitude), collected_at)
+        weather = self.weather.weather_request((latitude, longitude), collected_at)
         if weather:
             self.samples.push_weather(sample_id, weather, log=log)
         else:
@@ -96,7 +96,7 @@ class DBManager:
         sample_id = self.samples.new(qr_hex, research_name, datetime.datetime.now(datetime.timezone.utc), (60.00577, 30.3742), log=True)
         self.samples.push_photo(sample_id, sample_photo, log=log)
         self.samples.push_comment(sample_id, sample_comment, log=log)
-        self._weather_request(sample_id, log=log)
+        self.complete_weather_request(sample_id, log=log)
         
         body["sample"] = self.samples.get_info(sample_id)
         body["sample"]["id"] = sample_id

@@ -25,7 +25,7 @@ class Weather:
             "uv_index"
         ]
 
-    def get_weather(self, location: tuple[float, float], timestamp: datetime.datetime):
+    def weather_request(self, location: tuple[float, float], timestamp: datetime.datetime):
         params = {
             "latitude": location[0],
             "longitude": location[1],
