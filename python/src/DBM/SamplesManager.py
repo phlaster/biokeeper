@@ -70,7 +70,7 @@ class SamplesManager(AbstractDBManager):
 
         with self.db as (conn, cursor):
             cursor.execute("""
-                SELECT research_id, qr_id, owner_id, collected_at, created_at, updated_at, sent_to_lab_at, delivered_to_lab_at, gps, weather_conditions, comment, photo
+                SELECT research_id, qr_id, owner_id, collected_at, created_at, updated_at, sent_to_lab_at, delivered_to_lab_at, gps, weather, comment, photo
                 FROM "sample"
                 WHERE id = %s
             """, (sample_id,))
@@ -87,7 +87,7 @@ class SamplesManager(AbstractDBManager):
                 sample_info_dict['sent_to_lab_at'] = kit_data[6].strftime("%Y-%m-%d %H:%M:%S %Z") if kit_data[6] else None
                 sample_info_dict['delivered_to_lab_at'] = kit_data[7].strftime("%Y-%m-%d %H:%M:%S %Z") if kit_data[7] else None
                 sample_info_dict['gps'] = kit_data[8] #",".join(kit_data[8][1:-1].split(", "))
-                sample_info_dict['weather_conditions'] = True if kit_data[9] else None
+                sample_info_dict['weather'] = True if kit_data[9] else None
                 sample_info_dict['user_comment'] = kit_data[10]
                 sample_info_dict['photo'] = True if kit_data[11] else None
         return sample_info_dict
@@ -207,12 +207,12 @@ class SamplesManager(AbstractDBManager):
         return self._change_status("sample", sample_id, new_status, log=log)
         
     @multimethod
-    def push_weather(self, sample_id: int, weather: str):
-        return self._update_sample(sample_id, column_name="weather_conditions", value=weather)
+    def push_weather(self, sample_id: int, weather: str, log=False):
+        return self._update_sample(sample_id, column_name="weather", value=weather, log=log)
 
     @multimethod
-    def push_comment(self, sample_id: int, comment: str):
-        return self._update_sample(sample_id, column_name="user_comment", value=comment)
+    def push_comment(self, sample_id: int, comment: str, log=False):
+        return self._update_sample(sample_id, column_name="comment", value=comment, log=log)
     
     @multimethod
     def push_photo(self, sample_id: int, photo_bytes: bytes):
@@ -233,5 +233,5 @@ class SamplesManager(AbstractDBManager):
     def get_weather(self, sample_id: int, log=False):
         if not self.has(sample_id):
             return self.logger.log(f"Error: Sample #{sample_id} does not exist.", "") if log else ""
-        weather = self._SELECT("weather_conditions", "sample", "id", sample_id)
+        weather = self._SELECT("weather", "sample", "id", sample_id)
         return weather if weather else ""

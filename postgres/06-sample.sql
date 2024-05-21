@@ -24,7 +24,7 @@ CREATE TABLE "sample" (
     sent_to_lab_at TIMESTAMP WITH TIME ZONE,
     delivered_to_lab_at TIMESTAMP WITH TIME ZONE,
     gps POINT NOT NULL,
-    weather_conditions JSON,
+    weather JSON,
     comment TEXT,
     photo BYTEA -- https://www.postgresql.org/docs/7.4/jdbc-binary-data.html
 );
