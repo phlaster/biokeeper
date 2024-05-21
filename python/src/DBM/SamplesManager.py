@@ -18,9 +18,10 @@ class SamplesManager(AbstractDBManager):
         except Exception as e:
             return str(gps)
 
-    def _update_sample(self, sample_id: int, column_name: str, value: Union[str, bytes], log=False):
-        if not self.has(sample_id, log=log):
-            return self.logger.log(f"Error: Sample #{sample_id} does not exist.", False) if log else False
+    def _update_sample(self, identifier, column_name: str, value: Union[str, bytes], log=False):
+        sample_id = self.has(identifier, log=log)
+        if not sample_id:
+            return self.logger.log(f"Error: Sample #{sample_id} does not exist.", 0) if log else 0
         with self.db as (conn, cursor):
             cursor.execute(f"""
                 UPDATE "sample"
@@ -28,7 +29,7 @@ class SamplesManager(AbstractDBManager):
                 WHERE id = %s
             """, (value, sample_id,))
             conn.commit()
-        return self.logger.log(f"Info : Sample #{sample_id} was updated at {column_name}.", True) if log else True
+        return self.logger.log(f"Info : Sample #{sample_id} was updated at {column_name}.", sample_id) if log else sample_id
 
     def count(self, status:str="all"):
         return self._counter("sample_statuses", status)
@@ -63,7 +64,8 @@ class SamplesManager(AbstractDBManager):
     @multimethod
     def get_info(self, identifier, log=False):
         sample_info_dict = {}
-        if not self.has(sample_id):
+        sample_id = self.has(identifier, log=log)
+        if not sample_id:
             return self.logger.log(f"Error: Sample #{sample_id} does not exist.", sample_info_dict) if log else sample_info_dict
 
         with self.db as (conn, cursor):
@@ -108,7 +110,7 @@ class SamplesManager(AbstractDBManager):
         researches = ResearchesManager(self.logdata, logfile=self.logfile)
 
         if (abs(gps[0]) > 90.0 or abs(gps[1]) > 180.0):
-            return self.logger.log(f"Error: GPS coordinates {gps} are out of bounds.", False) if log else False
+            return self.logger.log(f"Error: GPS coordinates {gps} are out of bounds.", 0) if log else 0
         with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
             # Futures
             closest_toponym_future = executor.submit(self._get_closest_toponym, gps)
@@ -120,33 +122,33 @@ class SamplesManager(AbstractDBManager):
 
             research_info = research_info_future.result() #researches.get_info(research_name)
             if not research_info:
-                return self.logger.log(f"Error: Invalid research name '{research_name}'.", False) if log else False
+                return self.logger.log(f"Error: Invalid research name '{research_name}'.", 0) if log else 0
 
             if research_info["research_status"] != "ongoing":
-                return self.logger.log(f"Error: Research '{research_name}' is not in 'ongoing' status.", False) if log else False
+                return self.logger.log(f"Error: Research '{research_name}' is not in 'ongoing' status.", 0) if log else 0
 
             qr_info = qr_info_future.result() #self.get_qr_info(qr_unique_hex)
             if not qr_info:
-                return self.logger.log(f"Error: No such QR in database.", False) if log else False
+                return self.logger.log(f"Error: No such QR in database.", 0) if log else 0
             
             qr_id = qr_info["qr_id"]
             if qr_info["is_used"]:
-                return self.logger.log(f"Error: QR #{qr_id} already 'is_used'.", False) if log else False
+                return self.logger.log(f"Error: QR #{qr_id} already 'is_used'.", 0) if log else 0
             
             kit_id = qr_info["kit_id"]
             if not kit_id:
-                return self.logger.log(f"Error: QR code is not assigned to any kit.", False) if log else False
+                return self.logger.log(f"Error: QR code is not assigned to any kit.", 0) if log else 0
 
             kit_info = kits.get_info(kit_id)
             if not kit_info:
-                return self.logger.log(f"Error: No #{kit_id} was found (very strange!).", False) if log else False
+                return self.logger.log(f"Error: No #{kit_id} was found (very strange!).", 0) if log else 0
             
             kit_owner = kit_info["owner"]
             if not kit_owner:
-                return self.logger.log(f"Error: Kit #{kit_id} has no owner.", False) if log else False
+                return self.logger.log(f"Error: Kit #{kit_id} has no owner.", 0) if log else 0
 
             if kit_info["kit_status"] != "activated":
-                return self.logger.log(f"Error: Kit associated with QR hasn't been activated.", False) if log else False
+                return self.logger.log(f"Error: Kit associated with QR hasn't been activated.", 0) if log else 0
 
             owner_name = kit_owner["user_name"]
             kit_owner_status = users.status_of(owner_name)
@@ -202,35 +204,52 @@ class SamplesManager(AbstractDBManager):
         return sample_id
     
     @multimethod
-    def change_status(self, sample_id: int, new_status: str, log=False):
+    def change_status(self, identifier, new_status: str, log=False):
+        sample_id = self.has(identifier, log=log)
+        if not sample_id:
+            return self.logger.log(f"Error: No sample #{sample_id}", 0) if log else 0
         return self._change_status("sample", sample_id, new_status, log=log)
         
     @multimethod
-    def push_weather(self, sample_id: int, weather: str, log=False):
+    def push_weather(self, identifier, weather: str, log=False):
+        sample_id = self.has(identifier, log=log)
+        if not sample_id:
+            return self.logger.log(f"Error: No sample #{sample_id}", 0) if log else 0
         return self._update_sample(sample_id, column_name="weather", value=weather, log=log)
 
     @multimethod
-    def push_comment(self, sample_id: int, comment: str, log=False):
+    def push_comment(self, identifier, comment: str, log=False):
+        sample_id = self.has(identifier, log=log)
+        if not sample_id:
+            return self.logger.log(f"Error: No sample #{sample_id}", 0) if log else 0
         return self._update_sample(sample_id, column_name="comment", value=comment, log=log)
     
     @multimethod
-    def push_photo(self, sample_id: int, photo_bytes: bytes, log=False):
+    def push_photo(self, identifier, photo_bytes: bytes, log=False):
+        sample_id = self.has(identifier, log=log)
+        if not sample_id:
+            return self.logger.log(f"Error: No sample #{sample_id}", 0) if log else 0
         return self._update_sample(sample_id, column_name="photo", value=photo_bytes, log=log)
 
     @multimethod
-    def push_photo(self, sample_id: int, photo_hex: str, log=False):
+    def push_photo(self, identifier, photo_hex: str, log=False):
+        sample_id = self.has(identifier, log=log)
+        if not sample_id:
+            return self.logger.log(f"Error: No sample #{sample_id}", 0) if log else 0
         photo_bytes = bytes.fromhex(photo_hex)
         return self._update_sample(sample_id, column_name="photo", value=photo_bytes, log=log)
 
     @multimethod
-    def get_photo(self, sample_id: int, log=False):
-        if not self.has(sample_id):
+    def get_photo(self, identifier, log=False):
+        sample_id = self.has(identifier, log=log)
+        if not sample_id:
             return self.logger.log(f"Error: Sample #{sample_id} does not exist.", "") if log else ""
         photo = self._SELECT("photo", "sample", "id", sample_id)
         return photo if photo else b''
 
-    def get_weather(self, sample_id: int, log=False):
-        if not self.has(sample_id):
+    def get_weather(self, identifier, log=False):
+        sample_id = self.has(identifier, log=log)
+        if not sample_id:
             return self.logger.log(f"Error: Sample #{sample_id} does not exist.", "") if log else ""
         weather = self._SELECT("weather", "sample", "id", sample_id)
         return weather if weather else ""

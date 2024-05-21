@@ -118,7 +118,7 @@ class KitsManager(AbstractDBManager):
         return self._change_status("kit", identifier, new_status, log=log)
 
     
-    def change_owner(self, identifier: int, new_owner_identifier, log=False):
+    def change_owner(self, identifier, new_owner_identifier, log=False):
         kit_id = self.has(identifier, log=log)
         if not kit_id:
             return self.logger.log(f"Error: Kit #{kit_id} does not exist.", False) if log else False

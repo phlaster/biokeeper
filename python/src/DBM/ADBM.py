@@ -47,7 +47,7 @@ class AbstractDBManager(ABC):
     def _status_getter(self, table:str, id: int):
         with self.db as (conn, cursor):
             cursor.execute(f"""
-                SELECT (details).key, (details).info
+                SELECT (details).key
                 FROM {table}_statuses
                 WHERE id = (
                     SELECT status
@@ -56,7 +56,7 @@ class AbstractDBManager(ABC):
                 );
             """)
             status_key = cursor.fetchone()
-        return status_key[0] if status_key else None
+        return status_key[0] if status_key else ""
 
     def _change_status(self, table, identifier, new_status, log=False):
         id = self.has(identifier)

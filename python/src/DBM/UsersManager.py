@@ -108,47 +108,41 @@ class UsersManager(AbstractDBManager):
         return self.logger.log(f"Info : User #{user_id} '{user_name}' has been created", user_id) if log else user_id
 
     @multimethod
-    def change_status(self, identifier: str, new_status: str, log=False):
+    def change_status(self, identifier, new_status: str, log=False):
         return self._change_status("user", identifier, new_status, log=log)
 
 
     @multimethod
-    def rename(self, old_user_name: str, new_user_name: str, log=False):
-        """
-        -- logging --
-        returns False if unsuccessfull
-        """
-        if not self.has(old_user_name, log=log):
-            return self.logger.log(f"Error: Can't change user_name of a nonexisting user '{old_user_name}'.", False) if log else False
+    def rename(self, user_identifier, new_user_name: str, log=False):
+        user_id =  self.has(user_identifier, log=log)
+        if not user_id:
+            return self.logger.log(f"Error: Can't change user_name of a nonexisting user '{user_identifier}'.", "") if log else ""
         
-        if old_user_name==new_user_name:
-            return old_user_name
+        new_username_id = self.has(new_user_name)
+        if user_id==new_username_id:
+            return new_user_name
 
-        if self.has(new_user_name, log=log):
-            return self.logger.log(f"Error: Can't change user_name '{old_user_name}' to '{new_user_name}' - the name is taken.", False) if log else False
+        if new_username_id:
+            return self.logger.log(f"Error: Can't change user_name for user #{user_id} to '{new_user_name}' - the name is taken.", "") if log else ""
 
         if not self._validate_user_name(new_user_name, log=log):
-            return False
+            return ""
         
         with self.db as (conn, cursor):
-            cursor.execute('UPDATE "user" SET name = %s WHERE name = %s', (new_user_name, old_user_name))
+            cursor.execute('UPDATE "user" SET name = %s WHERE id = %s', (new_user_name, user_id))
             conn.commit()
             
-        return self.logger.log(f"Info : User '{old_user_name}' changed name to '{new_user_name}'.", new_user_name) if log else new_user_name
+        return self.logger.log(f"Info : User #{user_id} changed name to '{new_user_name}'.", new_user_name) if log else new_user_name
 
-    @multimethod
-    def rename(self, user_id: int, new_user_name: str, log=False):
-        old_user_name = self.has(user_id)
-        return self.rename(self, old_user_name, new_user_name, log=log)
     
     @multimethod
     def change_user_password(self, identifier, new_password: str, log=False):
         user_id = self.has(identifier, log=log)
         if not user_id:
-            return self.logger.log(f"Error: Can't change password of a nonexisting user '{identifier}'.", False) if log else False
+            return self.logger.log(f"Error: Can't change password of a nonexisting user '{identifier}'.", 0) if log else 0
         
         if not self._validate_password(new_password, identifier, log=log):
-            return False
+            return 0
         
         with self.db as (conn, cursor):
             hashed_password, salt = self._hash_and_salt(new_password)
@@ -158,17 +152,17 @@ class UsersManager(AbstractDBManager):
                 WHERE id = %s;
             """, (hashed_password, salt, user_id))
             conn.commit()
-        return self.logger.log(f"Info : Changed password for user #{user_id}.", True) if log else True
+        return self.logger.log(f"Info : Changed password for user #{user_id}.", user_id) if log else user_id
 
     
     def password_match(self, identifier, password: str, log=False):
         user_id = self.has(identifier, log=log)
         if not user_id:
-            return self.logger.log(f"Error: Authentication attempt for nonexisting user '{identifier}'.", False) if log else False
+            return self.logger.log(f"Error: Authentication attempt for nonexisting user '{identifier}'.", 0) if log else 0
 
         with self.db as (conn, cursor):
             cursor.execute('SELECT password_hash, password_salt FROM "user" WHERE id = %s', (user_id,))
             stored_hash, stored_salt = cursor.fetchone()
         rehashed_password = self._hashing(password, stored_salt)
 
-        return rehashed_password == stored_hash
+        return user_id if rehashed_password == stored_hash else 0

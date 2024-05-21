@@ -7,8 +7,10 @@ import json
 
 class Weather:
     def __init__(self, past_days=3, cache_duration=3600):
-        self.cache_session = requests_cache.CachedSession('.cache', expire_after=cache_duration)
-        self.retry_session = retry(self.cache_session, retries=5, backoff_factor=0.2)
+        self.cache_session = requests_cache.CachedSession(
+            '.cache', expire_after=cache_duration)
+        self.retry_session = retry(
+            self.cache_session, retries=5, backoff_factor=0.2)
         self.openmeteo = openmeteo_requests.Client(session=self.retry_session)
         self.past_days = past_days
         self.api_url = "https://api.open-meteo.com/v1/forecast"
@@ -56,5 +58,5 @@ class Weather:
             }
             hourly_dataframe = pd.DataFrame(data=hourly_data)
             return hourly_dataframe.to_json()
-        except ConnectionError as e: # for offline testing
+        except ConnectionError as e:  # for offline testing
             return None

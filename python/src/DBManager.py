@@ -37,7 +37,6 @@ class DBManager:
         self.researches = ResearchesManager(logdata, logfile=logfile)
         self.samples = SamplesManager(logdata, logfile=logfile)
         self.weather = Weather(past_days=3)
-        self._threads = []
 
     def _weather_request(self, sample_id, log=False):
         if not self.samples.has(sample_id):
@@ -108,15 +107,3 @@ class DBManager:
 
         log and self.logger.log(f"Info : Test example generated: user #{user_id}, research #{research_id}, kit #{kit_id}, sample #{sample_id}")
         return body
-
-
-
-    def attach_weather_to_sample(self, sample_id: int, log=False):
-        t = Thread(target=self._weather_request, args=(sample_id, log))
-        t.start()
-        self._threads.append(t)
-
-    def join_threads(self):
-        for t in self._threads:
-            t.join()
-        self._threads = []

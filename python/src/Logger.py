@@ -4,7 +4,7 @@ class Logger:
     def __init__(self, log_file):
         self.log_file = log_file
 
-    def log(self, msg, return_value = None):
+    def log(self, msg, return_value=None):
         with open(self.log_file, "a") as f:
             print(datetime.datetime.now(datetime.timezone.utc), msg, file=f)
         return return_value
