@@ -321,8 +321,7 @@ def gte(DBM):
     with open("dump.json", "w") as f:
         f.write(dumps(example))
     sample_id = example["sample"]["id"]
-    DBM.attach_weather_to_sample(sample_id, log=True)
-    DBM.join_threads()
+
 
 def main():
     logfile="DBManager_tests.log"
@@ -332,16 +331,16 @@ def main():
     test_time = time()
 
     try:
-        # existing_statuses(DBM)
-        # new_user(DBM)
-        # user_password_validation(DBM)
-        # user_2_info(DBM)
-        # user_renaming(DBM)
-        # researches(DBM)
-        # kits(DBM)
-        # qrcodes(DBM)
-        # samples(DBM)
-        # dispatch_testing(DBM)
+        existing_statuses(DBM)
+        new_user(DBM)
+        user_password_validation(DBM)
+        user_2_info(DBM)
+        user_renaming(DBM)
+        researches(DBM)
+        kits(DBM)
+        qrcodes(DBM)
+        samples(DBM)
+        dispatch_testing(DBM)
         gte(DBM)
         print(f"All tests passed in {round(time()-test_time, ndigits=1)} s.")
     except Exception as e:
