@@ -122,8 +122,8 @@ def user_2_info(DBM):
 
     # assert user_info["created_at"] < user_info["updated_at"]
     assert user_info["n_samples_collected"] == 0
-    assert user_info["user_status"] == DBM.users.status_of(username, log=True) == "volunteer"
-    assert user_info["user_id"] >= 1
+    assert user_info["status"] == DBM.users.status_of(username, log=True) == "volunteer"
+    assert user_info["id"] >= 1
     assert DBM.users.get_all()[username] == user_info
     assert DBM.users.count() == len(DBM.users.get_all())
     assert DBM.users.get_info(rstr()) == {}
@@ -168,13 +168,13 @@ def researches(DBM):
     # Research info
     research_info = DBM.researches.get_info(research_name)
     assert type(research_info) == dict
-    assert research_info["research_id"] >= 1
-    assert research_info["research_status"] == DBM.researches.status_of(research_name, log=True) == "ongoing"
+    assert research_info["id"] >= 1
+    assert research_info["status"] == DBM.researches.status_of(research_name, log=True) == "ongoing"
     # assert research_info["created_at"] < research_info["updated_at"]
     assert research_info["created_by"] == research_user_id
     assert research_info["n_samples"] == 0
     assert research_info["day_end"] == None
-    assert research_info["research_comment"] == None
+    assert research_info["comment"] == None
     assert DBM.researches.get_all()[research_name] == research_info
     assert len(DBM.researches.get_all()) == DBM.researches.count()
     assert DBM.researches.get_info(rstr()) == {}
@@ -190,7 +190,7 @@ def researches(DBM):
 
     research_updated_info = DBM.researches.get_info(research_name)
     # assert research_updated_info["day_end"] == good_day_end
-    assert research_updated_info["research_comment"] == random_comment
+    assert research_updated_info["comment"] == random_comment
 
 def kits(DBM):
     # Creating
@@ -224,7 +224,7 @@ def kits(DBM):
     assert not kit_1_info == kit_2_info
 
     # assert isinstance(kit_1_info["kit_unique_code"], bytes)
-    assert not kit_1_info["kit_unique_code"] == kit_2_info["kit_unique_code"]
+    assert not kit_1_info["unique_hex"] == kit_2_info["unique_hex"]
     # assert kit_1_info["created_at"] < kit_1_info["updated_at"] < kit_2_info["created_at"] == kit_2_info["updated_at"]
     qr_key = list(kit_1_info["qrs"].keys())[3]
     assert isinstance(qr_key, int)
@@ -238,7 +238,7 @@ def kits(DBM):
     owner_id = DBM.users.new(owner_name, rstr(), log=True)
     assert not DBM.kits.change_owner(kit_id, rstr()) # wrong user_name
     assert DBM.kits.change_owner(kit_id, owner_name) == kit_id
-    assert DBM.kits.get_info(kit_id)['owner'] == {'user_id': owner_id, 'user_name': owner_name}
+    assert DBM.kits.get_info(kit_id)['owner'] == {'id': owner_id, 'name': owner_name}
 
 def qrcodes(DBM):
     new_kit = DBM.kits.new(10, log=True)

@@ -72,10 +72,10 @@ class UsersManager(AbstractDBManager):
             user_data = cursor.fetchone()
 
         if user_data:
-            user_info_dict['user_id'] = user_data[0]
+            user_info_dict['id'] = user_data[0]
 
             status_key = self.status_of(user_name)
-            user_info_dict['user_status'] = status_key
+            user_info_dict['status'] = status_key
 
             user_info_dict['created_at'] = user_data[2].strftime("%Y-%m-%d %H:%M:%S %Z")
             user_info_dict['updated_at'] = user_data[3].strftime("%Y-%m-%d %H:%M:%S %Z")

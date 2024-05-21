@@ -152,7 +152,7 @@ class AbstractDBManager(ABC):
             """, (qr_hex,))
             result = cursor.fetchone()
         return {
-            'qr_id': int(result[0]),
+            'id': int(result[0]),
             'is_used': bool(result[1]),
             'kit_id': int(result[2])
         } if result else {}

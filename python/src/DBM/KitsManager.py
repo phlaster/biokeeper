@@ -66,10 +66,10 @@ class KitsManager(AbstractDBManager):
             kit_data = cursor.fetchone()
 
             if kit_data:
-                kit_info_dict['kit_unique_code'] = kit_data[0]
+                kit_info_dict['unique_hex'] = kit_data[0]
                 kit_info_dict['created_at'] = kit_data[1].strftime("%Y-%m-%d %H:%M:%S %Z")
                 kit_info_dict['updated_at'] = kit_data[2].strftime("%Y-%m-%d %H:%M:%S %Z")
-                kit_info_dict['kit_status'] = self.status_of(kit_id)
+                kit_info_dict['status'] = self.status_of(kit_id)
 
                 if kit_data[4]:  # Check if user_id is not None
                     cursor.execute("""
@@ -79,7 +79,9 @@ class KitsManager(AbstractDBManager):
                     """, (kit_data[4],))
                     owner_data = cursor.fetchone()
                     owner_dict = {
-                        'user_id': owner_data[0], 'user_name': owner_data[1]} if owner_data else None
+                        'id': owner_data[0],
+                        'name': owner_data[1]
+                    } if owner_data else None
                     kit_info_dict['owner'] = owner_dict
                 else:
                     kit_info_dict['owner'] = None

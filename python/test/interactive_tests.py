@@ -10,5 +10,5 @@ w = DBM.samples.get_weather(3)
 p = DBM.samples.get_photo(3)
 # print(bytes(p))
 
-c = DBM.samples.get_info(3)["user_comment"]
+c = DBM.samples.get_info(3)["comment"]
 print(c)

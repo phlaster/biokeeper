@@ -79,7 +79,7 @@ class SamplesManager(AbstractDBManager):
             if kit_data:
                 sample_info_dict['research_id'] = kit_data[0]
                 sample_info_dict['qr_id'] = kit_data[1]
-                sample_info_dict['sample_status'] = self.status_of(sample_id)
+                sample_info_dict['status'] = self.status_of(sample_id)
                 sample_info_dict['owner_id'] = kit_data[2]
                 sample_info_dict['collected_at'] = kit_data[3].strftime("%Y-%m-%d %H:%M:%S %Z")
                 sample_info_dict['created_at'] = kit_data[4].strftime("%Y-%m-%d %H:%M:%S %Z")
@@ -88,7 +88,7 @@ class SamplesManager(AbstractDBManager):
                 sample_info_dict['delivered_to_lab_at'] = kit_data[7].strftime("%Y-%m-%d %H:%M:%S %Z") if kit_data[7] else None
                 sample_info_dict['gps'] = kit_data[8] #",".join(kit_data[8][1:-1].split(", "))
                 sample_info_dict['weather'] = True if kit_data[9] else None
-                sample_info_dict['user_comment'] = kit_data[10]
+                sample_info_dict['comment'] = kit_data[10]
                 sample_info_dict['photo'] = True if kit_data[11] else None
         return sample_info_dict
 
@@ -124,14 +124,14 @@ class SamplesManager(AbstractDBManager):
             if not research_info:
                 return self.logger.log(f"Error: Invalid research name '{research_name}'.", 0) if log else 0
 
-            if research_info["research_status"] != "ongoing":
+            if research_info["status"] != "ongoing":
                 return self.logger.log(f"Error: Research '{research_name}' is not in 'ongoing' status.", 0) if log else 0
 
             qr_info = qr_info_future.result() #self.get_qr_info(qr_unique_hex)
             if not qr_info:
                 return self.logger.log(f"Error: No such QR in database.", 0) if log else 0
             
-            qr_id = qr_info["qr_id"]
+            qr_id = qr_info["id"]
             if qr_info["is_used"]:
                 return self.logger.log(f"Error: QR #{qr_id} already 'is_used'.", 0) if log else 0
             
@@ -147,17 +147,17 @@ class SamplesManager(AbstractDBManager):
             if not kit_owner:
                 return self.logger.log(f"Error: Kit #{kit_id} has no owner.", 0) if log else 0
 
-            if kit_info["kit_status"] != "activated":
+            if kit_info["status"] != "activated":
                 return self.logger.log(f"Error: Kit associated with QR hasn't been activated.", 0) if log else 0
 
-            owner_name = kit_owner["user_name"]
+            owner_name = kit_owner["name"]
             kit_owner_status = users.status_of(owner_name)
             if kit_owner_status not in ['admin', 'volunteer']:
                 return self.logger.log(f"Error: Owner of kit '{kit_owner}' is of status '{kit_owner_status}', which is not enough to publish samples.", False) if log else False
             
         
-            research_id = research_info['research_id']
-            owner_id = kit_owner["user_id"]
+            research_id = research_info['id']
+            owner_id = kit_owner["id"]
             
             closest_toponym = ', '.join(closest_toponym_future.result().split(", ")[:-4])
         with self.db as (conn, cursor):
