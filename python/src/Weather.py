@@ -24,12 +24,6 @@ class Weather:
         ]
 
     def get_weather(self, location: tuple[float, float], timestamp: datetime.datetime):
-        """
-        Retrieve weather data for the given location and timestamp.
-        
-        Returns:
-        str: A JSON dump of the weather data.
-        """
         params = {
             "latitude": location[0],
             "longitude": location[1],

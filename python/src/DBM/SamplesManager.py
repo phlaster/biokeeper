@@ -31,11 +31,6 @@ class SamplesManager(AbstractDBManager):
         return self.logger.log(f"Info : Sample #{sample_id} was updated at {column_name}.", True) if log else True
 
     def count(self, status:str="all"):
-        """
-        Returns number of researches with different statuses.
-        'all' for all statuses OR
-        Currently possible statuses: "collected", "sent", "delivered"
-        """
         return self._counter("sample_statuses", status)
 
     @multimethod
@@ -61,20 +56,12 @@ class SamplesManager(AbstractDBManager):
 
     @multimethod
     def status_of(self, sample_id: int, log=False):
-        """
-        Returns the status of a kit with the given sample_id.
-        If the kit does not exist, returns False.
-        """
         if not self.has(sample_id, log=log):
             return self.logger.log(f"Error: Sample #{sample_id} does not exist.", "") if log else ""
         return self._status_getter("sample", sample_id)
 
     @multimethod
-    def get_info(self, sample_id: int, log=False):
-        """
-        Returns a dictionary containing kit information for the kit with the given kit_id.
-        If the kit does not exist, returns empty dict.
-        """
+    def get_info(self, identifier, log=False):
         sample_info_dict = {}
         if not self.has(sample_id):
             return self.logger.log(f"Error: Sample #{sample_id} does not exist.", sample_info_dict) if log else sample_info_dict
@@ -115,9 +102,6 @@ class SamplesManager(AbstractDBManager):
         gps: tuple[float, float],
         log=False
     ):
-        """
-        Returns sample_id if successfull
-        """
         # Invoking necessary managers
         users = UsersManager(self.logdata, logfile=self.logfile)
         kits = KitsManager(self.logdata, logfile=self.logfile)

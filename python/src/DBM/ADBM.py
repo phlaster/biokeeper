@@ -91,10 +91,6 @@ class AbstractDBManager(ABC):
         return new_status
 
     def _all_getter(self, identifier_name, table_name):
-        """
-        Returns a dictionary where keys are identifiers
-        and values are the result of .get_info call for each identifier.
-        """
         alls = {}
 
         with self.db as (conn, cursor):
@@ -148,9 +144,6 @@ class AbstractDBManager(ABC):
 
     @multimethod
     def get_qr_info(self, qr_hex: str) -> dict:
-        """
-        Retrieves information about a QR code from the database.
-        """
         with self.db as (conn, cursor):
             cursor.execute("""
                 SELECT id, is_used, kit_id

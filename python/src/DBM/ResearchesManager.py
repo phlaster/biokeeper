@@ -5,9 +5,6 @@ from multimethod import multimethod
 
 class ResearchesManager(AbstractDBManager):
     def count(self, status:str="all"):
-        """
-        Currently possible statuses: "pending", "ongoing", "paused", "ended", "cancelled"
-        """
         return self._counter("research_statuses", status)
 
     @multimethod
@@ -30,21 +27,13 @@ class ResearchesManager(AbstractDBManager):
 
     
     def status_of(self, identifier, log=False):
-        """
-        Returns the status key of the research with the given name.
-        If the research does not exist, False is returned.
-        """
         id = self.has(identifier)
         if not id:
             return self.logger.log(f"Error: Research '{identifier}' does not exist.", "") if log else ""
         return self._status_getter("research", id)
 
     
-    def get_info(self, research_name: str, log=False):
-        """
-        Returns research information as a dictionary for the given research name.
-        If the research does not exist, an empty dictionary is returned (equivalent to False).
-        """
+    def get_info(self, identifier, log=False):
         research_info_dict = {}
         if not self.has(research_name):
             return self.logger.log(f"Error: Research '{research_name}' does not exist.", research_info_dict) if log else research_info_dict
@@ -76,10 +65,6 @@ class ResearchesManager(AbstractDBManager):
 
     
     def new(self, research_name: str, user_name: str, day_start: datetime.date, research_comment: str = None, log=False):
-        """
-        -- logging --
-        Returns the research_id if successful, otherwise False.
-        """
         if self.has(research_name):
             return self.logger.log(f"Error: Research '{research_name}' is already exists.", False) if log else False
 

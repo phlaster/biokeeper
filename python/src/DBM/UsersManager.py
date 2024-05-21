@@ -7,9 +7,6 @@ from multimethod import multimethod
 class UsersManager(AbstractDBManager):
     @multimethod
     def _validate_password(self, password: str, identifier: str, log=False):
-        """
-        Simplest validation possible. Rest is for the frontenders
-        """
         if len(password) > 4:
             return True
         else:
@@ -17,9 +14,6 @@ class UsersManager(AbstractDBManager):
     
     @multimethod
     def _validate_user_name(self, user_name: str, log=False):
-        """
-        Simplest validations for a user_name
-        """
         if len(user_name) > 4:
             return True
         else:
@@ -38,9 +32,6 @@ class UsersManager(AbstractDBManager):
         return (hashed, salt)
 
     def count(self, status: str = "all"):
-        """
-        Currently possible statuses: "admin", "volunteer", "observer"
-        """
         return self._counter("user_statuses", status)
 
     @multimethod
@@ -63,9 +54,6 @@ class UsersManager(AbstractDBManager):
 
     @multimethod
     def status_of(self, identifier: str, log=False):
-        """
-        if user_name is incorrect returns False
-        """
         user_id = self.has(identifier, log=log)
         if not user_id:
             return ""
@@ -73,10 +61,6 @@ class UsersManager(AbstractDBManager):
 
     @multimethod
     def get_info(self, user_name: str):
-        """
-        Returns user information as a dictionary for the given user_name.
-        If the user does not exist, an empty dictionary is returned (equivalent to False).
-        """
         user_info_dict = {}
 
         with self.db as (conn, cursor):
@@ -103,10 +87,6 @@ class UsersManager(AbstractDBManager):
 
     @multimethod
     def new(self, user_name: str, password: str, log=False):
-        """
-        -- logging --
-        Returns the user_id if successful, otherwise False.
-        """
         if self.has(user_name, log=log):
             return False
         if not self._validate_user_name(user_name, log=log):
@@ -163,9 +143,6 @@ class UsersManager(AbstractDBManager):
     
     @multimethod
     def change_user_password(self, identifier, new_password: str, log=False):
-        """
-        returns False if unsuccessfull
-        """
         user_id = self.has(identifier, log=log)
         if not user_id:
             return self.logger.log(f"Error: Can't change password of a nonexisting user '{identifier}'.", False) if log else False

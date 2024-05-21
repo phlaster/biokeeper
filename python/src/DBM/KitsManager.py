@@ -5,35 +5,18 @@ from multimethod import multimethod
 
 class KitsManager(AbstractDBManager):
     def _generate_qr_bytes(self, n: int, l: int = 10):
-        """
-        Generate a list of n random hexadecimal strings of length l.
-        Returns a list of strings.
-        """
         return [os.urandom(l).hex() for _ in range(n)]
 
     @multimethod
     def count(self, status: str = "all"):
-        """
-        Returns the number of kits with the specified status.
-        If status is 'all', returns the total number of kits.
-        Returns an integer.
-        """
         return self._counter("kit_statuses", status)
 
     @multimethod
     def has_status(self, status: str):
-        """
-        Checks if the given status is valid for kit.
-        Returns a (id, description) tuple if valid, otherwise ().
-        """
         return self._is_status_of("kit", status)
 
     @multimethod
     def has(self, kit_id: int, log=False):
-        """
-        Checks if a kit with the given ID exists.
-        Returns the kit ID if it exists, otherwise 0.
-        """
         id = self._SELECT("id", "kit", "id", kit_id)
         if not id:
             return self.logger.log(f"Error: No kit #{kit_id}.", 0) if log else 0
@@ -41,30 +24,18 @@ class KitsManager(AbstractDBManager):
 
     @multimethod
     def has(self, unique_hex: str, log=False):
-        """
-        Checks if a kit with the given unique hexadecimal code exists.
-        Returns the kit ID if it exists, otherwise 0 or logs an error message.
-        """
         id = self._SELECT("id", "kit", "unique_hex", unique_hex)
         if not id:
             return self.logger.log(f"Error: No kit with hex '{unique_hex}'.", 0) if log else 0
         return id
 
     def status_of(self, identifier, log=False):
-        """
-        Returns the status of the kit with the given identifier (ID or unique hexadecimal code).
-        If the kit does not exist, returns an empty string.
-        """
         kit_id = self.has(identifier)
         if not id:
             return self.logger.log(f"Error: Kit #{kit_id} does not exist.", "") if log else ""
         return self._status_getter("kit", kit_id)
 
     def get_qrs(self, identifier, log=False):
-        """
-        Returns a dictionary mapping QR IDs to their unique hexadecimal codes for the kit with the given identifier.
-        If the kit does not exist, returns an empty dictionary.
-        """
         qr_info = {}
         kit_id = self.has(identifier)
         if not kit_id:
@@ -81,11 +52,6 @@ class KitsManager(AbstractDBManager):
         return qr_info
 
     def get_info(self, identifier, log=False):
-        """
-        Returns a dictionary containing information about the kit with the given identifier, including its unique code,
-        creation and update times, status, owner details (if any), and a dictionary of QR codes associated with the kit.
-        If the kit does not exist, returns an empty dictionary.
-        """
         kit_info_dict = {}
         kit_id = self.has(identifier)
         if not kit_id:
@@ -126,10 +92,6 @@ class KitsManager(AbstractDBManager):
 
     @multimethod
     def new(self, n_qrs: int, log=False):
-        """
-        Inserts a new kit with `n_qrs` QRs into the database.
-        Returns the kit_id.
-        """
         if n_qrs > 50:
             self.logger.log(f"Info : No more than 50 QRs in one kit!")
             n_qrs = 50
