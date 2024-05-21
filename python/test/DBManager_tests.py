@@ -245,10 +245,10 @@ def qrcodes(DBM):
     qrs = DBM.kits.get_qrs(new_kit, log=True)
     assert isinstance(qrs, dict)
     for id in qrs:
-        binary = qrs[id]
-        assert DBM.kits.get_qr_info(binary)
-        assert not DBM.kits.get_qr_info(binary)['is_used']
-        assert DBM.kits.get_qr_info(binary)['kit_id'] == new_kit
+        hexcode = qrs[id]
+        assert DBM.kits.get_qr_info(hexcode)
+        assert not DBM.kits.get_qr_info(hexcode)['is_used']
+        assert DBM.kits.get_qr_info(hexcode)['kit_id'] == new_kit
 
 def samples(DBM):
     assert not DBM.samples.new("589461abcbfc6451a586", rstr(), datetime.datetime.now(datetime.timezone.utc), (2.4, 2.1), log=True)
