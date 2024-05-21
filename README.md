@@ -80,6 +80,11 @@ Detailed logs can be found in `DBManager_tests.log` file.
 
 ## DBManager
 The DBManager class is the central class that manages the interactions with the database. It provides a set of common virtual methods that are shared across all managers.
+- `generate_test_example(self, log=False) -> dict`
+  - Create new `user`, `kit`, `research`, `sample` for testing purposes.
+- `complete_weather_request(self, sample_id, log=False) -> None`
+  - Tries to push weather data to **already collected** sample the database using `api.open-meteo.com`
+
 
 ### Common Virtual Methods
 - `count(status: str = "all") -> int`
@@ -109,18 +114,18 @@ The DBManager class is the central class that manages the interactions with the 
 - `new(n_qrs: int, log=False) -> int`
   - Creates a new kit with n_qrs QR codes. Returns the `kit_id` if successful, or `0`.
 
-- `change_owner(identifier, new_owner_identifier, log=False) -> int`
+- `change_owner(kit_identifier, new_owner_identifier, log=False) -> int`
   - Changes the owner of the kit with the given identifier to the user with the specified `new_owner_identifier`. Returns the `kit_id` if successful, or `0`.
 
 ### UsersManager
 - `new(user_name: str, password: str, log=False) -> int`
   - Creates a new user with the given user_name and password. Returns the `user_id` if successful, or `0`.
 
-- `change_status(identifier: str, new_status: str, log=False) -> str`
+- `change_status(identifier, new_status: str, log=False) -> str`
   - Changes the status of the user with the given identifier to the specified new_status. Returns the `new_status` if successful, or `""`.
 
 - `rename(user_identifier, new_user_name: str, log=False) -> str`
-  - Renames the user with the given user_identifier to the specified new_user_name. Returns `new_user_name` if successful, or `""`.
+  - Renames the user with the given `user_identifier` to the specified `new_user_name`. Returns `new_user_name` if successful, or `""`.
 
 - `change_user_password(identifier, new_password: str, log=False) -> int`
   - Changes the password of the user with the given identifier to the specified new_password. Returns `user_id` or `0`.
@@ -136,18 +141,19 @@ The DBManager class is the central class that manages the interactions with the 
 - `push_comment(identifier, comment: str, log=False) -> int`
 - `push_photo(identifier, photo_bytes: bytes, log=False) -> int`
 - `push_photo(identifier, photo_hex: str, log=False) -> int`
-    - Return `sample_id` or `0`
+    - Returns `sample_id` or `0`
 
+Extract from DB:
 - `get_photo(identifier, log=False) -> bytes`
 - `get_weather(identifier, log=False) -> str`
 
 
 ### ResearchesManager
-- `new(research_name: str, user_name: str, day_start: datetime.date, research_comment: str = None, log=False)`
+- `new(research_name: str, user_name: str, day_start: datetime.date, research_comment: str = None, log=False) -> int`
   - Creates a new research with the given parameters. Returns `research_id` or `0`.
 
-- `change_comment(identifier, comment: str, log=False)`
-  - Updates the comment for the research with the given `identifier`.Returns `research_id` or `0`.
+- `change_comment(identifier, comment: str, log=False) -> int`
+  - Updates the comment for the research with the given `identifier`. Returns `research_id` or `0`.
 
-- `change_day_end(identifier, day_end: datetime.date, log=False)`
+- `change_day_end(identifier, day_end: datetime.date, log=False) -> int`
   - Updates the end date for the research with the given `identifier`. Returns `research_id` or `0`.
