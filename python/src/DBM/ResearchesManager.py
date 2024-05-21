@@ -101,7 +101,7 @@ class ResearchesManager(AbstractDBManager):
             """, (research_name, research_comment, user_id, day_start))
             research_id = cursor.fetchone()[0]
             conn.commit()
-        return self.logger.log(f"Info : Research #{research_id} '{research_name}' starting on {day_start} created by '{user_name}'", research_id) if log else research_id
+        return self.logger.log(f"Info : Created research #{research_id} '{research_name}' starting on {day_start} by '{user_name}'", research_id) if log else research_id
 
     
     def change_status(self, identifier, new_status, log=False):

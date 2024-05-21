@@ -4,11 +4,22 @@ from DBM.KitsManager import KitsManager
 from DBM.ResearchesManager import ResearchesManager
 
 from multimethod import multimethod, Union
+from geopy.geocoders import Nominatim
+import concurrent.futures
+
 import datetime
 
 class SamplesManager(AbstractDBManager):
+    def _get_closest_toponym(self, gps):
+        geolocator = Nominatim(user_agent="Biokeeper")
+        try:
+            location = geolocator.reverse(f"{gps[0]}, {gps[1]}")
+            return location.raw['display_name']
+        except Exception as e:
+            return str(gps)
+
     def _update_sample(self, sample_id: int, column_name: str, value: Union[str, bytes], log=False):
-        if not self.has(sample_id):
+        if not self.has(sample_id, log=log):
             return self.logger.log(f"Error: Sample #{sample_id} does not exist.", False) if log else False
         with self.db as (conn, cursor):
             cursor.execute(f"""
@@ -106,60 +117,64 @@ class SamplesManager(AbstractDBManager):
     ):
         """
         Returns sample_id if successfull
-        Inserts a new sample into the database with the provided information.
-        Checks if the research is ongoing, the QR code is valid and not used, the kit is activated, and the user is a volunteer.
-        Increments the n_samples_collected of the user by 1 if all conditions are met.
         """
         # Invoking necessary managers
         users = UsersManager(self.logdata, logfile=self.logfile)
         kits = KitsManager(self.logdata, logfile=self.logfile)
         researches = ResearchesManager(self.logdata, logfile=self.logfile)
 
-        if collected_at > datetime.datetime.now(datetime.timezone.utc) and log:
-            self.logger.log(f"Warn : The sample seems to be collected in future at {collected_at}.")
-
-        research_info = researches.get_info(research_name)
-        if not research_info:
-            return self.logger.log(f"Error: Invalid research name '{research_name}'.", False) if log else False
-
-        if research_info["research_status"] != "ongoing":
-            return self.logger.log(f"Error: Research '{research_name}' is not in 'ongoing' status.", False) if log else False
-
-        qr_info = self.get_qr_info(qr_unique_hex)
-        if not qr_info:
-            return self.logger.log(f"Error: No such QR in database.", False) if log else False
-        
-        qr_id = qr_info["qr_id"]
-        if qr_info["is_used"]:
-            return self.logger.log(f"Error: QR #{qr_id} already 'is_used'.", False) if log else False
-        
-        kit_id = qr_info["kit_id"]
-        if not kit_id:
-            return self.logger.log(f"Error: QR code is not assigned to any kit.", False) if log else False
-
-        kit_info = kits.get_info(kit_id)
-        if not kit_info:
-            return self.logger.log(f"Error: No #{kit_id} was found (very strange!).", False) if log else False
-        
-        kit_owner = kit_info["owner"]
-        if not kit_owner:
-            return self.logger.log(f"Error: Kit #{kit_id} has no owner.", False) if log else False
-
-        if kit_info["kit_status"] != "activated":
-            return self.logger.log(f"Error: Kit associated with QR hasn't been activated.", False) if log else False
-
-        owner_name = kit_owner["user_name"]
-        kit_owner_status = users.status_of(owner_name)
-        if kit_owner_status not in ['admin', 'volunteer']:
-            return self.logger.log(f"Error: Owner of kit '{kit_owner}' is of status '{kit_owner_status}', which is not enough to publish samples.", False) if log else False
-        
         if (abs(gps[0]) > 90.0 or abs(gps[1]) > 180.0):
             return self.logger.log(f"Error: GPS coordinates {gps} are out of bounds.", False) if log else False
-    
-        research_id = research_info['research_id']
-        owner_id = kit_owner["user_id"]
-        with self.db as (conn, cursor):
+        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+            # Futures
+            closest_toponym_future = executor.submit(self._get_closest_toponym, gps)
+            research_info_future = executor.submit(researches.get_info, research_name)
+            qr_info_future = executor.submit(self.get_qr_info, qr_unique_hex)
 
+            if collected_at > datetime.datetime.now(datetime.timezone.utc) and log:
+                self.logger.log(f"Warn : The sample seems to be collected in future at {collected_at}.")
+
+            research_info = research_info_future.result() #researches.get_info(research_name)
+            if not research_info:
+                return self.logger.log(f"Error: Invalid research name '{research_name}'.", False) if log else False
+
+            if research_info["research_status"] != "ongoing":
+                return self.logger.log(f"Error: Research '{research_name}' is not in 'ongoing' status.", False) if log else False
+
+            qr_info = qr_info_future.result() #self.get_qr_info(qr_unique_hex)
+            if not qr_info:
+                return self.logger.log(f"Error: No such QR in database.", False) if log else False
+            
+            qr_id = qr_info["qr_id"]
+            if qr_info["is_used"]:
+                return self.logger.log(f"Error: QR #{qr_id} already 'is_used'.", False) if log else False
+            
+            kit_id = qr_info["kit_id"]
+            if not kit_id:
+                return self.logger.log(f"Error: QR code is not assigned to any kit.", False) if log else False
+
+            kit_info = kits.get_info(kit_id)
+            if not kit_info:
+                return self.logger.log(f"Error: No #{kit_id} was found (very strange!).", False) if log else False
+            
+            kit_owner = kit_info["owner"]
+            if not kit_owner:
+                return self.logger.log(f"Error: Kit #{kit_id} has no owner.", False) if log else False
+
+            if kit_info["kit_status"] != "activated":
+                return self.logger.log(f"Error: Kit associated with QR hasn't been activated.", False) if log else False
+
+            owner_name = kit_owner["user_name"]
+            kit_owner_status = users.status_of(owner_name)
+            if kit_owner_status not in ['admin', 'volunteer']:
+                return self.logger.log(f"Error: Owner of kit '{kit_owner}' is of status '{kit_owner_status}', which is not enough to publish samples.", False) if log else False
+            
+        
+            research_id = research_info['research_id']
+            owner_id = kit_owner["user_id"]
+            
+            closest_toponym = ', '.join(closest_toponym_future.result().split(", ")[:-4])
+        with self.db as (conn, cursor):
             # Pushing the sample into the database
             cursor.execute("""
                 INSERT INTO "sample"
@@ -168,7 +183,7 @@ class SamplesManager(AbstractDBManager):
                 RETURNING id
             """, (research_id, owner_id, qr_id, collected_at, str(gps)))
             sample_id = cursor.fetchone()[0]
-            log and self.logger.log("Info : New sample #{sample_id} inserted successfully.")
+            log and self.logger.log(f"""Info : For research #{research_id} user #{owner_id} collected a sample #{sample_id} near "{closest_toponym}".""")
 
             # Updating the QR code status
             cursor.execute("""
@@ -215,13 +230,13 @@ class SamplesManager(AbstractDBManager):
         return self._update_sample(sample_id, column_name="comment", value=comment, log=log)
     
     @multimethod
-    def push_photo(self, sample_id: int, photo_bytes: bytes):
-        return self._update_sample(sample_id, column_name="photo", value=photo_bytes)
+    def push_photo(self, sample_id: int, photo_bytes: bytes, log=False):
+        return self._update_sample(sample_id, column_name="photo", value=photo_bytes, log=log)
 
     @multimethod
-    def push_photo(self, sample_id: int, photo_hex: str):
+    def push_photo(self, sample_id: int, photo_hex: str, log=False):
         photo_bytes = bytes.fromhex(photo_hex)
-        return self._update_sample(sample_id, column_name="photo", value=photo_bytes)
+        return self._update_sample(sample_id, column_name="photo", value=photo_bytes, log=log)
 
     @multimethod
     def get_photo(self, sample_id: int, log=False):

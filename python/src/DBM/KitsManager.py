@@ -156,18 +156,18 @@ class KitsManager(AbstractDBManager):
         return self._change_status("kit", identifier, new_status, log=log)
 
     
-    def change_owner(self, identifier: int, new_owner: str, log=False):
+    def change_owner(self, identifier: int, new_owner_identifier, log=False):
         kit_id = self.has(identifier, log=log)
         if not kit_id:
             return self.logger.log(f"Error: Kit #{kit_id} does not exist.", False) if log else False
 
         users = UsersManager(self.logdata, logfile=self.logfile)
-        user_id = users.has(new_owner, log=log)
+        user_id = users.has(new_owner_identifier, log=log)
         if not user_id:
-            return self.logger.log(f"Error: User '{user_name}' does not exist.", False) if log else False
+            return self.logger.log(f"Error: User #{user_id} does not exist.", False) if log else False
 
         with self.db as (conn, cursor):
             cursor.execute("""UPDATE "kit" SET owner_id = %s WHERE id = %s""", (user_id, kit_id))
             conn.commit()
 
-        return self.logger.log(f"Info : Owner of Kit #{kit_id} changed to '{user_name}'", kit_id) if log else kit_id
+        return self.logger.log(f"Info : Owner of Kit #{kit_id} changed to user #{user_id}", kit_id) if log else kit_id

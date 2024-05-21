@@ -61,11 +61,11 @@ class AbstractDBManager(ABC):
     def _change_status(self, table, identifier, new_status, log=False):
         id = self.has(identifier)
         if not id:
-            return self.logger.log(f"Error: Couldn't change status of {table} {identifier}: Does not exist.", "") if log else ""
+            return self.logger.log(f"Error: Couldn't change status of {table} #{id}: Does not exist.", "") if log else ""
 
         new_status_id = self.has_status(new_status)
         if not new_status_id:
-            return self.logger.log(f"Error: Couldn't change status of {table} {identifier}: Status '{new_status}' does not exist.", "") if log else ""
+            return self.logger.log(f"Error: Couldn't change status of {table} #{id}: Status '{new_status}' is incorrect.", "") if log else ""
 
         current_status_id = self.has_status(self.status_of(identifier))[0]
 
@@ -87,7 +87,7 @@ class AbstractDBManager(ABC):
             )
             conn.commit()
 
-        log and self.logger.log(f"Info : {table} '{identifier}' status changed to '{new_status}'")
+        log and self.logger.log(f"Info : Status of {table} #{id} has changed to '{new_status}'")
         return new_status
 
     def _all_getter(self, identifier_name, table_name):

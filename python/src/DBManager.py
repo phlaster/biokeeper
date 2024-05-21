@@ -88,7 +88,7 @@ class DBManager:
         self.weather = Weather(past_days=3)
         self._threads = []
 
-    def _async_weather_request(self, sample_id, log=False):
+    def _weather_request(self, sample_id, log=False):
         if not self.samples.has(sample_id):
             return self.logger.log(f"Sample #{sample_id} not found") if log else None
         sample_info = self.samples.get_info(sample_id)
@@ -97,24 +97,33 @@ class DBManager:
         latitude, longitude = map(float, sample_info['gps'].strip("()").split(","))
         weather = self.weather.get_weather((latitude, longitude), collected_at)
         if weather:
-            self.samples.push_weather(sample_id, weather)
+            self.samples.push_weather(sample_id, weather, log=log)
+        else:
+            log and self.logger.log(f"Couldn't fetch the weather data for sample #{sample_id}")
 
 
-    def generate_test_example(self):
+    def generate_test_example(self, log=False):
+        with open("python/src/DBM/example/research.md", "r") as f:
+            research_comment = f.read()
+        with open('python/src/DBM/example/mps', 'rb') as file:
+            sample_photo = file.read()
+        with open('python/src/DBM/example/sample.md', 'r') as file:
+            sample_comment = file.read()
+
         rstr = lambda k=10: ''.join(random.choices(string.ascii_uppercase + string.digits, k=k))
         user_name = rstr()
         user_password = rstr()
-        self.users.new(user_name, user_password)
-        self.users.change_status(user_name, "admin")
+        user_id = self.users.new(user_name, user_password, log=log)
+        self.users.change_status(user_name, "admin", log=log)
 
         research_name = rstr()
         day_start = datetime.date(2020, 1, 1)
-        self.researches.new(research_name, user_name, day_start)
-        self.researches.change_status(research_name, "ongoing")
+        research_id = self.researches.new(research_name, user_name, day_start, research_comment=research_comment, log=log)
+        self.researches.change_status(research_name, "ongoing", log=log)
 
-        kit_id = self.kits.new(11)
-        self.kits.change_owner(kit_id, user_name)
-        self.kits.change_status(kit_id, "activated")
+        kit_id = self.kits.new(11, log=log)
+        self.kits.change_owner(kit_id, user_name, log=log)
+        self.kits.change_status(kit_id, "activated", log=log)
 
         body = {
             "user" : {
@@ -134,11 +143,11 @@ class DBManager:
         
         qr_hex = list(body["kit"]["qrs"].items())[-1][1]
 
-        sample_id = self.samples.new(qr_hex, research_name, datetime.datetime.now(datetime.timezone.utc), (49.10503, -2.81411), log=True)
-        with open('python/src/DBM/mps', 'rb') as file:
-            photo_bytes = file.read()
-            self.samples.push_photo(sample_id, photo_bytes)
-
+        sample_id = self.samples.new(qr_hex, research_name, datetime.datetime.now(datetime.timezone.utc), (60.00577, 30.3742), log=True)
+        self.samples.push_photo(sample_id, sample_photo, log=log)
+        self.samples.push_comment(sample_id, sample_comment, log=log)
+        self._weather_request(sample_id, log=log)
+        
         body["sample"] = self.samples.get_info(sample_id)
         body["sample"]["id"] = sample_id
         for key, value in self.researches.get_info(research_name).items():
@@ -146,12 +155,13 @@ class DBManager:
         for key, value in self.users.get_info(user_name).items():
             body["user"][key] = value
 
+        log and self.logger.log(f"Info : Test example generated: user #{user_id}, research #{research_id}, kit #{kit_id}, sample #{sample_id}")
         return body
 
 
 
     def attach_weather_to_sample(self, sample_id: int, log=False):
-        t = Thread(target=self._async_weather_request, args=(sample_id, log))
+        t = Thread(target=self._weather_request, args=(sample_id, log))
         t.start()
         self._threads.append(t)
 
