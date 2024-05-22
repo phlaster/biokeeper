@@ -5,7 +5,9 @@ from researches import router as researches_router
 from kits import router as kit_router
 from samples import router as samples_router
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, Form, Request
 from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 
 app = FastAPI()
@@ -45,6 +47,15 @@ async def admin_sign_in():
     with open(html_path, 'r') as file:
         html_content = file.read()
     return HTMLResponse(content=html_content)
+
+
+templates = Jinja2Templates(directory="python/src/FastAPI/templates")
+@app.post("/admin/sign_in", response_class=HTMLResponse)
+async def handle_admin_sign_in(request: Request, login: str = Form(...), password: str = Form(...)):
+    if login == "admin" and password == "password":
+        return templates.TemplateResponse("admin_page.html", {"request": request})
+    else:
+        return templates.TemplateResponse("admin_sign_in.html", {"request": request, "error": "Invalid credentials"})
 
 
 if __name__ == "__main__":

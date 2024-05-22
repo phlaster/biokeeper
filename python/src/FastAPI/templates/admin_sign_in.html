@@ -13,22 +13,20 @@
     <div class="container center-align">
         <img src="/static/biokeeper_logo.png" alt="Biokeeper Logo" class="logo">
         <h1>Biokeeper Admin</h1>
-        <div class="login-form">
+        <form action="/admin/sign_in" method="post" class="login-form">
             <div class="input-field">
-                <input id="login" type="text" class="validate">
+                <input id="login" name="login" type="text" class="validate">
                 <label for="login">Login</label>
             </div>
             <div class="input-field">
-                <input id="password" type="password" class="validate">
+                <input id="password" name="password" type="password" class="validate">
                 <label for="password">Password</label>
             </div>
             <div class="button-row">
                 <a href="/" class="btn-large waves-effect waves-light">Go back</a>
-                <a href="#" class="btn-large waves-effect waves-light">Sign In</a>
+                <button type="submit" class="btn-large waves-effect waves-light">Sign In</button>
             </div>
-        </div>
+        </form>
     </div>
-    <!-- Import Materialize JavaScript -->
-    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script> -->
 </body>
 </html>
