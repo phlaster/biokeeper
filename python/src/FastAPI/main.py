@@ -1,10 +1,12 @@
-
+import os
 from fastapi import FastAPI
 from users import router as users_router
 from researches import router as researches_router
 from kits import router as kit_router
 from samples import router as samples_router
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 
 app = FastAPI()
 
@@ -25,16 +27,26 @@ app.include_router(samples_router)
 
 
 
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
+# Mount the static files directory
+app.mount("/static", StaticFiles(directory="python/src/FastAPI/static"), name="static")
 
 
+@app.get("/", response_class=HTMLResponse)
+async def read_root():
+    html_path = "python/src/FastAPI/templates/index.html"
+    with open(html_path, 'r') as file:
+        html_content = file.read()
+    return HTMLResponse(content=html_content)
 
-# @app.get("/")
 
+@app.get("/admin/sign_in", response_class=HTMLResponse)
+async def admin_sign_in():
+    html_path = "python/src/FastAPI/templates/admin_sign_in.html"
+    with open(html_path, 'r') as file:
+        html_content = file.read()
+    return HTMLResponse(content=html_content)
 
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=1337)
+    uvicorn.run("main:app", host="0.0.0.0", port=1337, reload=True)
