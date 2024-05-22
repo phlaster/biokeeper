@@ -19,7 +19,7 @@ body {
 }
 
 .logo {
-    max-width: 400px;
+    max-width: 380px;
     margin-bottom: 20px;
 }
 
@@ -34,18 +34,23 @@ p {
 }
 
 .button-row {
+    border-radius: 14px;
     display: flex;
     justify-content: center;
     gap: 20px;
 }
 
+.button-row .btn-large {
+    font-family: inherit;
+}
+
 .btn-large {
-    background-color: #361b38;
+    background-color: #749774;
     color: white;
 }
 
 .btn-large:hover {
-    background-color: #ef86f7;
+    background-color: #085108;
 }
 
 .input-field {
@@ -60,10 +65,10 @@ p {
 }
 
 .input-field input:focus + label {
-    color: #ef86f7 !important;
+    color: #085108 !important;
 }
 
 .input-field input:focus {
-    border-bottom: 1px solid #ef86f7 !important;
-    box-shadow: 0 1px 0 0 #ef86f7 !important;
+    border-bottom: 1px solid #085108 !important;
+    box-shadow: 0 1px 0 0 #085108 !important;
 }

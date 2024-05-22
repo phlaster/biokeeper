@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Biokeeper - Login</title>
-    <!-- Import Materialize CSS -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
-    <!-- Custom CSS -->
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
     <link rel="stylesheet" href="/static/style.css">
+    
 </head>
 <body>
     <div class="container center-align">
@@ -28,5 +28,33 @@
             </div>
         </form>
     </div>
+
+    <!-- Import jQuery and Materialize JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            M.updateTextFields(); // Initialize Materialize components
+
+            // Add 'active' class on focus
+            $('input').on('focus', function() {
+                $(this).siblings('label').addClass('active');
+            });
+
+            // Remove 'active' class on blur if input is empty
+            $('input').on('blur', function() {
+                if (!$(this).val()) {
+                    $(this).siblings('label').removeClass('active');
+                }
+            });
+
+            // Check input fields on page load
+            $('input').each(function() {
+                if ($(this).val()) {
+                    $(this).siblings('label').addClass('active');
+                }
+            });
+        });
+    </script>
 </body>
 </html>
