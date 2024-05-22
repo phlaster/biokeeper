@@ -94,7 +94,7 @@ class SamplesManager(AbstractDBManager):
 
     
     def get_all(self):
-        return self._all_getter("sample_id", "samples")
+        return self._all_getter("id", "sample")
 
     @multimethod
     def new(self,
