@@ -71,7 +71,7 @@ orjson==3.10.3
 pandas==2.2.2
 platformdirs==4.2.2
     # via requests-cache
-psycopg2==2.9.9
+psycopg2-binary==2.9.9
 pydantic==2.7.1
     # via fastapi
 pydantic-core==2.18.2
