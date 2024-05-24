@@ -113,7 +113,8 @@ class KitsManager(AbstractDBManager):
                     VALUES (%s, %s)
                 """, (qr_unique_code, kit_id))
             conn.commit()
-        return self.logger.log(f"Info : Kit #{kit_id} with {n_qrs} QRs has been created", kit_id) if log else kit_id
+        log and self.logger.log(f"Info : Kit #{kit_id} with {n_qrs} QRs has been created", kit_id)
+        return kit_id
 
     
     def change_status(self, identifier, new_status, log=False):
@@ -133,5 +134,5 @@ class KitsManager(AbstractDBManager):
         with self.db as (conn, cursor):
             cursor.execute("""UPDATE "kit" SET owner_id = %s WHERE id = %s""", (user_id, kit_id))
             conn.commit()
-
-        return self.logger.log(f"Info : Owner of Kit #{kit_id} changed to user #{user_id}", kit_id) if log else kit_id
+        log and self.logger.log(f"Info : Owner of Kit #{kit_id} changed to user #{user_id}", kit_id)
+        return kit_id

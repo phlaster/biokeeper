@@ -105,7 +105,8 @@ class UsersManager(AbstractDBManager):
             """, (user_name, password_hash, salt))
             user_id = cursor.fetchone()[0]
             conn.commit()
-        return self.logger.log(f"Info : User #{user_id} '{user_name}' has been created", user_id) if log else user_id
+        log and self.logger.log(f"Info : User #{user_id} '{user_name}' has been created", user_id)
+        return user_id
 
     @multimethod
     def change_status(self, identifier, new_status: str, log=False):
@@ -132,7 +133,8 @@ class UsersManager(AbstractDBManager):
             cursor.execute('UPDATE "user" SET name = %s WHERE id = %s', (new_user_name, user_id))
             conn.commit()
             
-        return self.logger.log(f"Info : User #{user_id} changed name to '{new_user_name}'.", new_user_name) if log else new_user_name
+        log and self.logger.log(f"Info : User #{user_id} changed name to '{new_user_name}'.", new_user_name)
+        return new_user_name
 
     
     @multimethod
@@ -152,7 +154,8 @@ class UsersManager(AbstractDBManager):
                 WHERE id = %s;
             """, (hashed_password, salt, user_id))
             conn.commit()
-        return self.logger.log(f"Info : Changed password for user #{user_id}.", user_id) if log else user_id
+        log and self.logger.log(f"Info : Changed password for user #{user_id}.", user_id)
+        return user_id
 
     
     def password_match(self, identifier, password: str, log=False):

@@ -29,7 +29,8 @@ class SamplesManager(AbstractDBManager):
                 WHERE id = %s
             """, (value, sample_id,))
             conn.commit()
-        return self.logger.log(f"Info : Sample #{sample_id} was updated at {column_name}.", sample_id) if log else sample_id
+        log and self.logger.log(f"Info : Sample #{sample_id} was updated at {column_name}.", sample_id)
+        return sample_id
 
     def count(self, status:str="all"):
         return self._counter("sample_statuses", status)

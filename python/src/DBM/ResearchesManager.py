@@ -88,7 +88,8 @@ class ResearchesManager(AbstractDBManager):
             """, (research_name, research_comment, user_id, day_start))
             research_id = cursor.fetchone()[0]
             conn.commit()
-        return self.logger.log(f"Info : Created research #{research_id} '{research_name}' starting on {day_start} by '{user_name}'", research_id) if log else research_id
+        log and self.logger.log(f"Info : Created research #{research_id} '{research_name}' starting on {day_start} by '{user_name}'", research_id)
+        return research_id
 
     
     def change_status(self, identifier, new_status, log=False):
@@ -107,8 +108,8 @@ class ResearchesManager(AbstractDBManager):
                 WHERE id = %s
             """, (comment, research_id))
             conn.commit()
-
-        return self.logger.log(f"Info : Updated comment for research #{research_id}", research_id) if log else research_id
+        log and self.logger.log(f"Info : Updated comment for research #{research_id}", research_id)
+        return research_id
 
     
     def change_day_end(self, identifier, day_end: datetime.date, log=False):
@@ -129,4 +130,5 @@ class ResearchesManager(AbstractDBManager):
             """, (day_end, research_id))
             conn.commit()
 
-        return self.logger.log(f"Info : Now research #{research_id} ends on {day_end}", research_id) if log else research_id
+        log and self.logger.log(f"Info : Now research #{research_id} ends on {day_end}", research_id)
+        return research_id
