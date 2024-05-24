@@ -62,7 +62,7 @@ class DBManager:
 
         rstr = lambda k=10: ''.join(random.choices(string.ascii_uppercase + string.digits, k=k))
         user_name = rstr()
-        user_password = rstr()
+        user_password = "password"
         user_id = self.users.new(user_name, user_password, log=log)
         self.users.change_status(user_name, "admin", log=log)
 
