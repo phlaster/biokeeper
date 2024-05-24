@@ -1,9 +1,12 @@
 import os
 from fastapi import FastAPI
+
+from smartphone_routers import router as smartphone_router
 from users import router as users_router
 from researches import router as researches_router
 from kits import router as kit_router
 from samples import router as samples_router
+
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, Form, Request
 from fastapi.responses import HTMLResponse
@@ -26,6 +29,7 @@ app.include_router(users_router)
 app.include_router(researches_router)
 app.include_router(kit_router)
 app.include_router(samples_router)
+app.include_router(smartphone_router)
 
 
 
