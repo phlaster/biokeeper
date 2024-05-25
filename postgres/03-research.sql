@@ -26,12 +26,12 @@ CREATE TABLE "research" (
 );
 -- Autoupdating `updated_at`
 CREATE TRIGGER autoupdate_researches
-AFTER INSERT OR UPDATE ON "research"
+BEFORE INSERT OR UPDATE ON "research"
 FOR EACH ROW
 EXECUTE FUNCTION refresh_last_updated();
 
 CREATE TRIGGER research_status_trigger
-AFTER INSERT OR UPDATE ON "research"
+BEFORE INSERT OR UPDATE ON "research"
 FOR EACH ROW
 EXECUTE FUNCTION update_status_n('research_statuses');
 

@@ -21,12 +21,12 @@ CREATE TABLE "user" (
 );
 -- Autoupdating `updated_at`
 CREATE TRIGGER autoupdate_user
-AFTER INSERT OR UPDATE ON "user"
+BEFORE INSERT OR UPDATE ON "user"
 FOR EACH ROW
 EXECUTE FUNCTION refresh_last_updated();
 
 CREATE TRIGGER user_status_trigger
-AFTER INSERT OR UPDATE ON "user"
+BEFORE INSERT OR UPDATE ON "user"
 FOR EACH ROW
 EXECUTE FUNCTION update_status_n('user_statuses');
 

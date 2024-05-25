@@ -29,12 +29,12 @@ CREATE TABLE "sample" (
     photo BYTEA -- https://www.postgresql.org/docs/7.4/jdbc-binary-data.html
 );
 CREATE TRIGGER autoupdate_sample
-AFTER INSERT OR UPDATE ON "user"
+BEFORE INSERT OR UPDATE ON "user"
 FOR EACH ROW
 EXECUTE FUNCTION refresh_last_updated();
 
 CREATE TRIGGER sample_status_trigger
-AFTER INSERT OR UPDATE ON "sample"
+BEFORE INSERT OR UPDATE ON "sample"
 FOR EACH ROW
 EXECUTE FUNCTION update_status_n('sample_statuses');
 

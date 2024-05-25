@@ -21,12 +21,12 @@ CREATE TABLE "kit" (
 );
 
 CREATE TRIGGER autoupdate_kits
-AFTER INSERT OR UPDATE ON "kit"
+BEFORE INSERT OR UPDATE ON "kit"
 FOR EACH ROW
 EXECUTE FUNCTION refresh_last_updated();
 
 CREATE TRIGGER kit_status_trigger
-AFTER INSERT OR UPDATE ON "kit"
+BEFORE INSERT OR UPDATE ON "kit"
 FOR EACH ROW
 EXECUTE FUNCTION update_status_n('kit_statuses');
 
