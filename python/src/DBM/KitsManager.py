@@ -67,8 +67,8 @@ class KitsManager(AbstractDBManager):
 
             if kit_data:
                 kit_info_dict['unique_hex'] = kit_data[0]
-                kit_info_dict['created_at'] = kit_data[1].strftime("%Y-%m-%d %H:%M:%S %Z")
-                kit_info_dict['updated_at'] = kit_data[2].strftime("%Y-%m-%d %H:%M:%S %Z")
+                kit_info_dict['created_at'] = kit_data[1].astimezone().isoformat()
+                kit_info_dict['updated_at'] = kit_data[2].astimezone().isoformat()
                 kit_info_dict['status'] = self.status_of(kit_id)
 
                 if kit_data[4]:  # Check if user_id is not None

@@ -51,8 +51,8 @@ class ResearchesManager(AbstractDBManager):
             research_info_dict['name'] = research_data[0]
             research_info_dict['id'] = research_id
             research_info_dict['status'] = self.status_of(identifier)
-            research_info_dict['created_at'] = research_data[1].strftime("%Y-%m-%d %H:%M:%S %Z")
-            research_info_dict['updated_at'] = research_data[2].strftime("%Y-%m-%d %H:%M:%S %Z")
+            research_info_dict['created_at'] = research_data[1].astimezone().isoformat()
+            research_info_dict['updated_at'] = research_data[2].astimezone().isoformat()
             research_info_dict['created_by'] = research_data[3]
             research_info_dict['day_start'] = research_data[4].strftime("%Y-%m-%d")
             research_info_dict['day_end'] = research_data[5].strftime("%Y-%m-%d") if research_data[5] else None

@@ -42,8 +42,7 @@ class DBManager:
         if not self.samples.has(sample_id):
             return self.logger.log(f"Sample #{sample_id} not found") if log else None
         sample_info = self.samples.get_info(sample_id)
-        collected_at = datetime.datetime.strptime(
-            sample_info['collected_at'], "%Y-%m-%d %H:%M:%S %Z%z")
+        collected_at = datetime.datetime.fromisoformat(sample_info['collected_at'])
         latitude, longitude = map(float, sample_info['gps'].strip("()").split(","))
         weather = self.weather.weather_request((latitude, longitude), collected_at)
         if weather:

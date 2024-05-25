@@ -77,8 +77,8 @@ class UsersManager(AbstractDBManager):
             status_key = self.status_of(user_name)
             user_info_dict['status'] = status_key
 
-            user_info_dict['created_at'] = user_data[2].strftime("%Y-%m-%d %H:%M:%S %Z")
-            user_info_dict['updated_at'] = user_data[3].strftime("%Y-%m-%d %H:%M:%S %Z")
+            user_info_dict['created_at'] = user_data[2].astimezone().isoformat()
+            user_info_dict['updated_at'] = user_data[3].astimezone().isoformat()
             user_info_dict['n_samples_collected'] = user_data[4]
         return user_info_dict
 

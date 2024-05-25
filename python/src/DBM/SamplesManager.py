@@ -82,11 +82,11 @@ class SamplesManager(AbstractDBManager):
                 sample_info_dict['qr_id'] = kit_data[1]
                 sample_info_dict['status'] = self.status_of(sample_id)
                 sample_info_dict['owner_id'] = kit_data[2]
-                sample_info_dict['collected_at'] = kit_data[3].strftime("%Y-%m-%d %H:%M:%S %Z")
-                sample_info_dict['created_at'] = kit_data[4].strftime("%Y-%m-%d %H:%M:%S %Z")
-                sample_info_dict['updated_at'] = kit_data[5].strftime("%Y-%m-%d %H:%M:%S %Z") 
-                sample_info_dict['sent_to_lab_at'] = kit_data[6].strftime("%Y-%m-%d %H:%M:%S %Z") if kit_data[6] else None
-                sample_info_dict['delivered_to_lab_at'] = kit_data[7].strftime("%Y-%m-%d %H:%M:%S %Z") if kit_data[7] else None
+                sample_info_dict['collected_at'] = kit_data[3].astimezone().isoformat()
+                sample_info_dict['created_at'] = kit_data[4].astimezone().isoformat()
+                sample_info_dict['updated_at'] = kit_data[5].astimezone().isoformat() 
+                sample_info_dict['sent_to_lab_at'] = kit_data[6].astimezone().isoformat() if kit_data[6] else None
+                sample_info_dict['delivered_to_lab_at'] = kit_data[7].astimezone().isoformat() if kit_data[7] else None
                 sample_info_dict['gps'] = kit_data[8] #",".join(kit_data[8][1:-1].split(", "))
                 sample_info_dict['weather'] = True if kit_data[9] else None
                 sample_info_dict['comment'] = kit_data[10]
