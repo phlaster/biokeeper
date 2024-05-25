@@ -4,7 +4,7 @@ services:
     build: ./python
     restart: always
     ports:
-      - 1337:8080
+      - 8000:1337
     volumes:
       - /etc/localtime:/etc/localtime:ro
     networks:
