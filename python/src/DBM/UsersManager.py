@@ -60,26 +60,25 @@ class UsersManager(AbstractDBManager):
         return self._status_getter("user", user_id)
 
     @multimethod
-    def get_info(self, user_name: str):
+    def get_info(self, identifier):
         user_info_dict = {}
 
+        user_id = self.has(identifier)
         with self.db as (conn, cursor):
             cursor.execute("""
-                SELECT id, status, created_at, updated_at, n_samples_collected
+                SELECT name, created_at, updated_at, n_samples_collected
                 FROM "user"
-                WHERE name = %s
-            """, (user_name,))
+                WHERE id = %s
+            """, (user_id,))
             user_data = cursor.fetchone()
 
         if user_data:
-            user_info_dict['id'] = user_data[0]
-
-            status_key = self.status_of(user_name)
-            user_info_dict['status'] = status_key
-
-            user_info_dict['created_at'] = user_data[2].astimezone().isoformat()
-            user_info_dict['updated_at'] = user_data[3].astimezone().isoformat()
-            user_info_dict['n_samples_collected'] = user_data[4]
+            user_info_dict['id'] = user_id
+            user_info_dict['name'] = user_data[0]
+            user_info_dict['status'] = self.status_of(identifier)
+            user_info_dict['created_at'] = user_data[1].astimezone().isoformat()
+            user_info_dict['updated_at'] = user_data[2].astimezone().isoformat()
+            user_info_dict['n_samples_collected'] = user_data[3]
         return user_info_dict
 
     def get_all(self):
