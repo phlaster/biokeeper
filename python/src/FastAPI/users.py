@@ -51,6 +51,11 @@ def check_password_match(user_name: str, password: str):
     if not user_data:
         return JSONResponse(status_code=401, content={'success': False})
     if user_id == DBM.users.password_match(user_id, password):
-        return JSONResponse(status_code=200, content={'success': True, 'user_id': user_id, 'user_name': user_data['name'], 'user_status': user_data['status']})
+        return JSONResponse(status_code=200, content={
+            'success': True,
+            'user_id': user_id,
+            'user_name': user_data['name'],
+            'user_status': user_data['status']
+        })
     return JSONResponse(status_code=401, content={'success': False})
         
