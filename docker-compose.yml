@@ -7,6 +7,9 @@ services:
       - 1337:8080
     volumes:
       - /etc/localtime:/etc/localtime:ro
+    networks:
+      - bk
+
 
 
   db_postgres:
