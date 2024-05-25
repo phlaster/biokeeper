@@ -1,8 +1,9 @@
 
 from fastapi.routing import APIRouter
 from db_manager import DBM
-from fastapi import Body
+from fastapi import Body, status
 from typing import Any
+from fastapi.responses import JSONResponse
 
 router = APIRouter()
 
@@ -44,4 +45,7 @@ def get_user_score(user_name):
 
 @router.get('/users/password_match/{user_id}/{password}')
 def check_password_match(user_id: int, password: str):
-    return DBM.users.password_match(user_id, password)
+    if user_id == DBM.users.password_match(user_id, password):
+        return JSONResponse(status_code=200, content={'success': True, 'user_id': user_id, 'user_status': 'admin'})
+    return JSONResponse(status_code=401, content={'success': False})
+        
