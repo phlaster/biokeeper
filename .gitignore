@@ -18,3 +18,6 @@ python/venv/
 
 # JSON
 *.json
+
+# tests
+python/test/interactive_tests.py
