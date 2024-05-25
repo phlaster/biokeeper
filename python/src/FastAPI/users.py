@@ -42,3 +42,6 @@ def create_user(
 def get_user_score(user_name):
     return DBM.users.get_info(user_name)['n_samples_collected']
 
+@router.get('/users/password_match/{user_id}/{password}')
+def check_password_match(user_id: int, password: str):
+    return DBM.users.password_match(user_id, password)
