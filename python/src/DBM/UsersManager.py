@@ -52,14 +52,12 @@ class UsersManager(AbstractDBManager):
             return self.logger.log(f"Error: No such user #{user_id}.", 0) if log else 0
         return id
 
-    @multimethod
-    def status_of(self, identifier: str, log=False):
+    def status_of(self, identifier, log=False):
         user_id = self.has(identifier, log=log)
         if not user_id:
             return ""
         return self._status_getter("user", user_id)
 
-    @multimethod
     def get_info(self, identifier):
         user_info_dict = {}
 
