@@ -12,3 +12,11 @@
 /captures
 .externalNativeBuild
 .cxx
+
+__pycache__/
+.idea/
+.venv/
+.env
+.jwt_env
+*.zip
+postgres_data/
