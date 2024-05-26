@@ -5,7 +5,7 @@ import { StyleSheet, Text, View, Button, Image } from 'react-native';
 
 export default function Main({navigation}) {
 const loadscene=()=>{
-  navigation.navigate('Qr_screen');
+  navigation.navigate('Ask_autorization');
 }
 
   return (
