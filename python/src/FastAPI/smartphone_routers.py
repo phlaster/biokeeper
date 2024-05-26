@@ -140,7 +140,7 @@ async def react_push_sample(
         return JSONResponse(
             content={
                 "result": False,
-                "response": "Failed to push sample"
+                "response": response
             },
             status_code=500
         )
