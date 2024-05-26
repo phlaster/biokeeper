@@ -20,6 +20,6 @@ services:
       - .jwt_env
 
     ports:
-      - 8000:8000
+      - 1338:8000
     restart:
       always
