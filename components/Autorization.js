@@ -1,6 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, Button,TextInput} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const getData = async (key) => {
+  try {
+    const value = await AsyncStorage.getItem(key);
+    if(value !== null) {
+      // значение найдено
+      return value;
+    }
+  } catch(e) {
+    // ошибка при чтении данных
+    console.error("Ошибка при чтении данных", e);
+  }
+};
+const storeData = async (key, value) => {
+  try {
+    await AsyncStorage.setItem(key, value);
+  } catch (e) {
+    // сохранение ошибки
+    console.error("Ошибка при сохранении данных", e);
+  }
+};
 
 
 export default function Autorization({navigation}) {
@@ -9,22 +31,56 @@ const loadscene=()=>{
 }
 const [inputLogin, setInputLogin] = useState(''); 
 const [inputPassword, setInputPassword] = useState(''); 
+const [storedLogin, setStoredLogin] = useState('');
+const [storedPassword, setStoredPassword] = useState('');
+const handleSave = () => {
+  storeData('login', inputLogin);
+  setInputLogin(inputLogin);
+  storeData('password', inputPassword);
+  setInputPassword(inputPassword);
+  console.log(inputPassword,inputLogin)
+};
+
+useEffect(() => {
+  const fetchData = async () => {
+    const login = await getData('login');
+    const password = await getData('password');
+    if (login) {
+      setStoredLogin(login);
+    }
+    if (password) {
+      setStoredPassword(password);
+    }
+  };
+
+  fetchData();
+}, []);
+
+
+
   return (
+
+
+
     
     <View style={styles.container}>
     <Text style={styles.textLast}>Авторизация</Text>
       <TextInput
         style={styles.input}
-        onChangeText={setInputLogin} 
+        onChangeText={setInputLogin}
         value={inputLogin}
         placeholder="Login"
       />
+      
+      
       <TextInput
         style={styles.input}
         onChangeText={setInputPassword} 
         value={inputPassword}
         placeholder="Password"
       />
+      
+      <Button title="Сохранить" onPress={handleSave} />
       <Button style={styles.btn} title={'Продолжить'} onPress={loadscene}/>
       
       <StatusBar style="auto" />
