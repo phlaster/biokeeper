@@ -27,19 +27,22 @@ const storeData = async (key, value) => {
 
 export default function Autorization({navigation}) {
 const loadscene=()=>{
+  storeData('login', inputLogin);
+  setInputLogin(inputLogin);
+  storeData('password', inputPassword);
+  setInputPassword(inputPassword);
   navigation.navigate('LK');
 }
 const [inputLogin, setInputLogin] = useState(''); 
 const [inputPassword, setInputPassword] = useState(''); 
 const [storedLogin, setStoredLogin] = useState('');
 const [storedPassword, setStoredPassword] = useState('');
-const handleSave = () => {
-  storeData('login', inputLogin);
-  setInputLogin(inputLogin);
-  storeData('password', inputPassword);
-  setInputPassword(inputPassword);
-  console.log(inputPassword,inputLogin)
-};
+
+
+if (storedLogin && storedPassword){
+  navigation.navigate('LK');
+
+}
 
 useEffect(() => {
   const fetchData = async () => {
@@ -80,7 +83,6 @@ useEffect(() => {
         placeholder="Password"
       />
       
-      <Button title="Сохранить" onPress={handleSave} />
       <Button style={styles.btn} title={'Продолжить'} onPress={loadscene}/>
       
       <StatusBar style="auto" />

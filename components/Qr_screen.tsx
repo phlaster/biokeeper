@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Dimensions, Alert, Vibration } from "react-native";
+import { Dimensions, Alert, Vibration,Button } from "react-native";
 import { Camera,CameraView } from 'expo-camera';
 import { router } from "expo-router";
 import * as Linking from "expo-linking";
@@ -53,6 +53,10 @@ function QRScanner({ navigation }) {
     Vibration.vibrate();
     navigation.navigate('Bio_info', { data: data });
   };
+  const handleBarCodeScannedTest = async () => {
+    
+    navigation.navigate('Bio_info', { data: '123'});
+  };
 
   const goToSettings = () => {
     Linking.openSettings();
@@ -65,12 +69,14 @@ function QRScanner({ navigation }) {
 
 
     return (
+      <><Button title="Сохранить" onPress={handleBarCodeScannedTest} />
       <CameraView
         onBarcodeScanned={handleBarCodeScanned}
         barcodeScannerSettings={{
           barcodeTypes: ["qr"],
         }}
-        style={{ height: Dimensions.get("window").height }} />
+
+        style={{ height: Dimensions.get("window").height }} /></>
     );
   }
 }

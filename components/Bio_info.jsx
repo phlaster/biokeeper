@@ -3,7 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, Alert, View, Button, Image ,TextInput } from 'react-native';
 import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import Request from './Requests';
 
 const getLocationPermission = async () => {
   const { status } = await Location.requestForegroundPermissionsAsync();
@@ -14,26 +14,35 @@ const getLocationPermission = async () => {
   return true;
 };
 
-const storeData = async (value) => {
+const getData = async (key) => {
   try {
-    const jsonValue = JSON.stringify(value);
-    await AsyncStorage.setItem('my-key', jsonValue);
-  } catch (e) {
-    console.error('save_error:', error);
+    const value = await AsyncStorage.getItem(key);
+    if(value !== null) {
+      // значение найдено
+      return value;
+    }
+  } catch(e) {
+    // ошибка при чтении данных
+    console.error("Ошибка при чтении данных", e);
   }
 };
-const getData = async () => {
+const storeData = async (key, value) => {
   try {
-    const jsonValue = await AsyncStorage.getItem('my-key');
-    return jsonValue != null ? JSON.parse(jsonValue) : null;
+    await AsyncStorage.setItem(key, value);
   } catch (e) {
-    console.error('get_error:', error);
+    // сохранение ошибки
+    console.error("Ошибка при сохранении данных", e);
   }
 };
 
 export default function Bio_info({ route, navigation }) {
   const [location, setLocation] = useState(null);
-
+  const [storedGeoData, setStoredGeoData] = useState('');
+  const handleSave = () => {
+    
+    storeData('GeoData', location);
+    
+  };
   useEffect(() => {
     const getLocation = async () => {
       const permissionGranted = await getLocationPermission();
@@ -41,13 +50,12 @@ export default function Bio_info({ route, navigation }) {
         const currentLocation = await Location.getCurrentPositionAsync({});
         setLocation(currentLocation.coords);
       }
-      storeData(location);
-      data123=getData();
-      console.log(data123)
     };
 
     getLocation();
   }, []); // Run only once on component mount
+
+  
 
   const { data } = route.params;
   const loadscene = () => {
@@ -55,31 +63,15 @@ export default function Bio_info({ route, navigation }) {
     Alert.alert(
       "Теперь можно сфотографировать местность"
     );
-
-    //---------------------------------------
     
-
-    
-    
-    //------------------------------------------
-    
-    var request = new XMLHttpRequest();
-    request.onreadystatechange = (e) => {
-      if (request.readyState !== 4) {
-        return;
-      }
-      if (request.status === 200) {
-        Alert.alert('success' + request.responseText);
-      } else {
-        Alert.alert('error' + request.status);
-      }
-    };
-    
-    request.open('GET', 'http://62.109.17.249:1337/req/' + "{qr:" + data+"");
-    request.send();
+   
     
     navigation.navigate('Take_photo');
   };
+
+  const sendData=()=>{
+    Request('POST',)
+  }
 
   const [inputValue, setInputValue] = useState(''); 
   return (
@@ -95,6 +87,10 @@ export default function Bio_info({ route, navigation }) {
       <Text>Comment: {inputValue ? inputValue : 'Loading...'}</Text>
       <Text>qr: {data}</Text>
       <Button title={'Начать'} onPress={loadscene} />
+      
+      <Button title="Сохранить данные" onPress={handleSave} />
+      <Button title="Отправить данные" onPress={sendData} />
+      
       <StatusBar style="auto" />
     </View>
   );
