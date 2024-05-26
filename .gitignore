@@ -20,3 +20,8 @@ __pycache__/
 .jwt_env
 *.zip
 postgres_data/
+
+
+*.log
+*.json
+*.sqlite
