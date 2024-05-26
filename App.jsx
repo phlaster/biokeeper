@@ -2,13 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text ,Alert} from 'react-native';
 import * as Location from 'expo-location';
 import MainStack from './navigate';
-import { Camera} from "expo-camera/next";
 
 
 const App = () => {
 
   const [hasCameraPermission, setCameraPermission] = useState(false);
-  const [hasAudioPermission, setAudioPermission] = useState(false);
   const [permissionGranted, setPermissionGranted] = useState(false);
 
   useEffect(() => {
@@ -40,7 +38,7 @@ const App = () => {
 
   
 
-  if (!permissionGranted && !hasAudioPermission && !hasCameraPermission) {
+  if (!permissionGranted && !hasCameraPermission) {
     return (
       <View style={styles.container}>
         <Text>Permission to access location was denied</Text>

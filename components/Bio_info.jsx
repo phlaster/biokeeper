@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, Alert, View, Button, Image ,TextInput } from 'react-native';
 import * as Location from 'expo-location';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 const getLocationPermission = async () => {
   const { status } = await Location.requestForegroundPermissionsAsync();
@@ -10,6 +12,23 @@ const getLocationPermission = async () => {
     return false;
   }
   return true;
+};
+
+const storeData = async (value) => {
+  try {
+    const jsonValue = JSON.stringify(value);
+    await AsyncStorage.setItem('my-key', jsonValue);
+  } catch (e) {
+    console.error('save_error:', error);
+  }
+};
+const getData = async () => {
+  try {
+    const jsonValue = await AsyncStorage.getItem('my-key');
+    return jsonValue != null ? JSON.parse(jsonValue) : null;
+  } catch (e) {
+    console.error('get_error:', error);
+  }
 };
 
 export default function Bio_info({ route, navigation }) {
@@ -22,6 +41,9 @@ export default function Bio_info({ route, navigation }) {
         const currentLocation = await Location.getCurrentPositionAsync({});
         setLocation(currentLocation.coords);
       }
+      storeData(location);
+      data123=getData();
+      console.log(data123)
     };
 
     getLocation();
@@ -35,17 +57,10 @@ export default function Bio_info({ route, navigation }) {
     );
 
     //---------------------------------------
-    let file = new Blob([JSON.stringify(location)], {type: "txt"});
-    let a = document.createElement("a"),
-                url = URL.createObjectURL(file);
-        a.href = url;
-        a.download = "last_location";
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(function() {
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);  
-        }, 0);
+    
+
+    
+    
     //------------------------------------------
     
     var request = new XMLHttpRequest();

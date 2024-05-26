@@ -1,25 +1,19 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, Button, Image } from 'react-native';
+import { StyleSheet, Text, View, Button,TextInput,Image} from 'react-native';
 
 
-export default function Ask_autorization({navigation}) {
-const loadscene_autorization=()=>{
-  navigation.navigate('Autorization');
-}
-const loadscene_no_autorization=()=>{
+export default function LK({navigation}) {
+const loadscene=()=>{
   navigation.navigate('Qr_screen');
 }
 
   return (
+    
     <View style={styles.container}>
+    
+      <Button style={styles.btn} title={'Продолжить'} onPress={loadscene}/>
       
-      
-      
-      <Text style={styles.text}>Продолжить с авторизацией</Text>
-       <Button style={styles.btn} title={'Продолжить'} onPress={loadscene_autorization}/>
-
-       
       <StatusBar style="auto" />
     </View>
   );

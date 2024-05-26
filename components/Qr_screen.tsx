@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Dimensions, Alert, Vibration } from "react-native";
-import { Camera, CameraView } from "expo-camera/next";
+import { Camera,CameraView } from 'expo-camera';
 import { router } from "expo-router";
 import * as Linking from "expo-linking";
 
