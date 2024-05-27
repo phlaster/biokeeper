@@ -21,3 +21,8 @@ python/venv/
 
 # tests
 python/test/interactive_tests.py
+
+
+.env
+.jwt_env
+postgres_data/
