@@ -2,11 +2,30 @@ import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, Button, Alert, TouchableWithoutFeedback } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Request from './Requests';
+
 import getData from './getData';
 import storeData from './storeData';
 import { RadioButtons } from 'react-native-radio-buttons';
 
+
+const Request = async (method, url, data) => {
+  try {
+    const response = await fetch(url + "?" + new URLSearchParams(data).toString(), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    });
+
+    const resp = await response.json();
+    
+    return resp;
+  } catch (error) {
+    console.error('There has been a problem with your fetch operation:', error);
+    throw error;
+  }
+}
 
 export default function LK({ navigation }) {
   const [Options, setOptions] = useState([]);

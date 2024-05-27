@@ -2,23 +2,42 @@ import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, Button,TextInput} from 'react-native';
 
-import { Request } from './Requests';
+
 import getData from './getData';
 import storeData from './storeData';
 
 
+const Request = async (method, url, data) => {
+  try {
+    const response = await fetch(url + "?" + new URLSearchParams(data).toString(), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    });
 
+    const resp = await response.json();
+    
+    return resp;
+  } catch (error) {
+    console.error('There has been a problem with your fetch operation:', error);
+    throw error;
+  }
+}
 
 export default function Autorization({navigation}) {
 
 const loadscene=()=>{
-  storeData('username', inputLogin);
+  
   setInputLogin(inputLogin);
-  storeData('password', inputPassword);
+  
   setInputPassword(inputPassword);
 
   const authorize = Request('POST', 'http://62.109.17.249:8000/react/login', {username: inputLogin, password: inputPassword}).then(data => {
     console.log(data);
+    storeData('username', inputLogin);
+    storeData('password', inputPassword);
   })
   .catch(error => {
     console.error('Error:', error);
@@ -33,7 +52,7 @@ const [storedLogin, setStoredLogin] = useState('');
 const [storedPassword, setStoredPassword] = useState('');
 
 
-if (storedLogin && storedPassword){
+if (storedLogin && storedPassword) {
   navigation.navigate('LK');
 }
 
