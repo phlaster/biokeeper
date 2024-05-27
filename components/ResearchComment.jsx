@@ -17,8 +17,8 @@ export default function MarkdownScreen({ route, navigation }) {
       </ScrollView>
 
       <View style={styles.buttonContainer}>
-        <Button title={'Дальше'} onPress={() => { navigation.navigate('Qr_screen'); }} />
         <Button title={'Назад'} onPress={() => { navigation.navigate('LK'); }} />
+        <Button title={'Дальше'} onPress={() => { navigation.navigate('Qr_screen'); }} />
       </View>
     </View>
   );

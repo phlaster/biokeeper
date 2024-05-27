@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, Button, TextInput } from 'react-native';
+import { StyleSheet, Text, View, Button, TextInput, Alert } from 'react-native';
 
 import getData from './getData';
 import storeData from './storeData';
@@ -52,13 +52,12 @@ export default function Authorization({ navigation }) {
       });
       console.log(data);
 
-      if (data.result) {  // Предполагается, что ответ содержит поле `success` при успешной авторизации
+      if (data.result) {
         await storeData('username', inputLogin);
         await storeData('password', inputPassword);
         navigation.navigate('LK');
       } else {
-        // Обработка ошибок авторизации
-        console.error('Authorization failed');
+        Alert.alert(data.response);
       }
     } catch (error) {
       console.error('Error:', error);

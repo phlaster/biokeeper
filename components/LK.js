@@ -34,7 +34,7 @@ export default function LK({ navigation }) {
   const [Index, setIndex] = useState(0);
 
   const loadscene = () => {
-    console.log("INDEX!!!" + Index);
+    storeData("research", Comments[Index]);
     navigation.navigate('ResearchComment', { data: Comments[Index] });
   }
 
