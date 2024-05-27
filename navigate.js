@@ -3,9 +3,8 @@ import Qr_screen from  './components/Qr_screen';
 import Main from  './components/Main';
 import Bio_info from  './components/Bio_info';
 import Take_photo from './components/Take_photo';
-import Ask_autorization from './components/Ask_autorization'
-import Autorization from './components/Autorization'
-import LK from './components/LK'
+import Autorization from './components/Autorization';
+import LK from './components/LK';
 import { createStackNavigator } from "@react-navigation/stack";
 import { NavigationContainer } from "@react-navigation/native";
 
@@ -18,11 +17,6 @@ export default function Navigate(){
                 name="Main"
                 component={Main}
                 options={{title:'Main'}}
-                />
-            <Stack.Screen
-                name="Ask_autorization"
-                component={Ask_autorization}
-                options={{title:'Ask_autorization'}}
                 />
             <Stack.Screen
                 name="Autorization"

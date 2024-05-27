@@ -38,8 +38,7 @@ export default function Take_photo({ navigation }) {
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsEditing: true,
       aspect: [1, 1],
-      quality: 1,
-      presentationStyle: 0
+      quality: 1
     });
 
     console.log(result);

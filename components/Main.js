@@ -5,7 +5,7 @@ import { StyleSheet, Text, View, Button, Image } from 'react-native';
 
 export default function Main({navigation}) {
 const loadscene=()=>{
-  navigation.navigate('Ask_autorization');
+  navigation.navigate('Autorization');
 }
 
   return (

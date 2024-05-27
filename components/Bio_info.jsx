@@ -69,9 +69,9 @@ export default function Bio_info({ route, navigation }) {
     navigation.navigate('Take_photo');
   };
 
-  const sendData=()=>{
-    Request('POST',)
-  }
+  const sendData = () => {
+    Requst();
+  };
 
   const [inputValue, setInputValue] = useState(''); 
   return (
@@ -80,7 +80,7 @@ export default function Bio_info({ route, navigation }) {
         style={styles.input}
         onChangeText={setInputValue} 
         value={inputValue}
-        placeholder="Введите что-то"
+        placeholder="Введите название исследования"
       />
       <Text>Latitude: {location ? location.latitude : 'Loading...'}</Text>
       <Text>Longitude: {location ? location.longitude : 'Loading...'}</Text>

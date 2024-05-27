@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, Button,TextInput} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Request from './Requests';
 
 const getData = async (key) => {
   try {
@@ -26,13 +27,23 @@ const storeData = async (key, value) => {
 
 
 export default function Autorization({navigation}) {
+
 const loadscene=()=>{
-  storeData('login', inputLogin);
+  storeData('username', inputLogin);
   setInputLogin(inputLogin);
   storeData('password', inputPassword);
   setInputPassword(inputPassword);
+
+  const authorize = Request('POST', 'http://62.109.17.249:8000/react/login', {username: inputLogin, password: inputPassword}).then(data => {
+    console.log(data);
+  })
+  .catch(error => {
+    console.error('Error:', error);
+  });
+
   navigation.navigate('LK');
 }
+
 const [inputLogin, setInputLogin] = useState(''); 
 const [inputPassword, setInputPassword] = useState(''); 
 const [storedLogin, setStoredLogin] = useState('');
@@ -41,12 +52,12 @@ const [storedPassword, setStoredPassword] = useState('');
 
 if (storedLogin && storedPassword){
   navigation.navigate('LK');
-
 }
+
 
 useEffect(() => {
   const fetchData = async () => {
-    const login = await getData('login');
+    const login = await getData('username');
     const password = await getData('password');
     if (login) {
       setStoredLogin(login);
@@ -62,10 +73,6 @@ useEffect(() => {
 
 
   return (
-
-
-
-    
     <View style={styles.container}>
     <Text style={styles.textLast}>Авторизация</Text>
       <TextInput
