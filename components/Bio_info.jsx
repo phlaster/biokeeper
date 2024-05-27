@@ -49,7 +49,7 @@ export default function Bio_info({ route, navigation }) {
   };
 
   const sendData = () => {
-    Requst();
+    
   };
 
   const [inputValue, setInputValue] = useState(''); 
@@ -59,7 +59,7 @@ export default function Bio_info({ route, navigation }) {
         style={styles.input}
         onChangeText={setInputValue} 
         value={inputValue}
-        placeholder="Введите название исследования"
+        placeholder="Введите комментарий"
       />
       <Text>Latitude: {location ? location.latitude : 'Loading...'}</Text>
       <Text>Longitude: {location ? location.longitude : 'Loading...'}</Text>
