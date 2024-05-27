@@ -1,5 +1,3 @@
-import { Alert } from 'react-native';
-
 export default async function Request(method, url, data) {
   try {
     const response = await fetch(url + "?" + new URLSearchParams(data).toString(), {

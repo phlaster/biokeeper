@@ -1,29 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, Button,TextInput} from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import Request from './Requests';
 
-const getData = async (key) => {
-  try {
-    const value = await AsyncStorage.getItem(key);
-    if(value !== null) {
-      // значение найдено
-      return value;
-    }
-  } catch(e) {
-    // ошибка при чтении данных
-    console.error("Ошибка при чтении данных", e);
-  }
-};
-const storeData = async (key, value) => {
-  try {
-    await AsyncStorage.setItem(key, value);
-  } catch (e) {
-    // сохранение ошибки
-    console.error("Ошибка при сохранении данных", e);
-  }
-};
+import { Request } from './Requests';
+import getData from './getData';
+import storeData from './storeData';
+
+
 
 
 export default function Autorization({navigation}) {

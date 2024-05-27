@@ -4,6 +4,7 @@ import Main from  './components/Main';
 import Bio_info from  './components/Bio_info';
 import Take_photo from './components/Take_photo';
 import Autorization from './components/Autorization';
+import ResearchComment from './components/ResearchComment';
 import LK from './components/LK';
 import { createStackNavigator } from "@react-navigation/stack";
 import { NavigationContainer } from "@react-navigation/native";
@@ -28,6 +29,11 @@ export default function Navigate(){
                 component={LK}
                 options={{title:'LK'}}
                 />   
+            <Stack.Screen
+                name="ResearchComment"
+                component={ResearchComment}
+                options={{title:'ResearchComment'}}
+                />
             <Stack.Screen
                 name="Qr_screen"
                 component={Qr_screen}

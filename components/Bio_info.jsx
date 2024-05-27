@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, Alert, View, Button, Image ,TextInput } from 'react-native';
+import { StyleSheet, Text, Alert, View, Button, TextInput } from 'react-native';
 import * as Location from 'expo-location';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import Request from './Requests';
+import storeData from './storeData';
 
 const getLocationPermission = async () => {
   const { status } = await Location.requestForegroundPermissionsAsync();
@@ -14,26 +13,6 @@ const getLocationPermission = async () => {
   return true;
 };
 
-const getData = async (key) => {
-  try {
-    const value = await AsyncStorage.getItem(key);
-    if(value !== null) {
-      // значение найдено
-      return value;
-    }
-  } catch(e) {
-    // ошибка при чтении данных
-    console.error("Ошибка при чтении данных", e);
-  }
-};
-const storeData = async (key, value) => {
-  try {
-    await AsyncStorage.setItem(key, value);
-  } catch (e) {
-    // сохранение ошибки
-    console.error("Ошибка при сохранении данных", e);
-  }
-};
 
 export default function Bio_info({ route, navigation }) {
   const [location, setLocation] = useState(null);

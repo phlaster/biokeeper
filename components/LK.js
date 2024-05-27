@@ -1,48 +1,45 @@
 import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, Button, Alert } from 'react-native';
+import { StyleSheet, Text, View, Button, Alert, TouchableWithoutFeedback } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Request from './Requests';
-import { RadioButtons } from 'react-native-radio-buttons'
+import getData from './getData';
+import storeData from './storeData';
+import { RadioButtons } from 'react-native-radio-buttons';
 
 
-const getData = async (key) => {
-  try {
-    const value = await AsyncStorage.getItem(key);
-    if(value !== null) {
-      // значение найдено
-      return value;
-    }
-  } catch(e) {
-    // ошибка при чтении данных
-    console.error("Ошибка при чтении данных", e);
-  }
-};
+export default function LK({ navigation }) {
+  const [Options, setOptions] = useState([]);
+  const [Comments, setComments] = useState([]);
+  const [SelectedOption, setSelectedOption] = useState('');
+  const [Index, setIndex] = useState(0);
 
-export default function LK({navigation}) {
-
-  const loadscene=()=>{
-    navigation.navigate('Qr_screen');
+  const loadscene = () => {
+    console.log("INDEX!!!" + Index);
+    navigation.navigate('ResearchComment', { data: Comments[Index] });
   }
 
-  const exit = async()  => {
-    let username='username',
-        password='password';
+  const exit = async () => {
+    let username = 'username',
+      password = 'password';
 
     try {
       await AsyncStorage.removeItem(username);
       await AsyncStorage.removeItem(password);
       navigation.navigate('Autorization');
-    } catch(e) {
-      // ошибка при удалении данных
+    } catch (e) {
       console.error("Ошибка при удалении данных", e);
     }
-
   };
 
-  function renderOption(option, selected, onSelect, index){
-    const style = selected ? { fontWeight: 'bold'} : {};
- 
+  function renderOption(option, selected, onSelect, index) {
+    const style = selected ? { fontWeight: 'bold' } : {};
+
+    
+    if (selected) {
+      setIndex(index);
+    }
+
     return (
       <TouchableWithoutFeedback onPress={onSelect} key={index}>
         <Text style={style}>{option}</Text>
@@ -50,56 +47,50 @@ export default function LK({navigation}) {
     );
   }
 
+  
 
-
-  const [Options, setOptions] = useState('');
-  const [SelectedOption, setSelectedOption] = useState('');
-
-    useEffect(() => {
-      const fetchData = async () => {
-        const login = await getData('username');
-        const password = await getData('password');
-        if (login && password) {
-          const researches = Request('POST', 'http://62.109.17.249:8000/react/researches', {username: login, password: password}).then(data => {
-          console.log(data);  
+  useEffect(() => {
+    const fetchData = async () => {
+      const login = await getData('username');
+      const password = await getData('password');
+      if (login && password) {
+        try {
+          const data = await Request('POST', 'http://62.109.17.249:8000/react/researches', { username: login, password: password });
+          console.log(data);
           if (!data.result) {
-              Alert.alert("Ошибка:\n" + data.response);
-            }
-            
-            setOptions(Array.from(Object.values(data.response), r=>r.name));
-            console.log(Options);
-
-          })
-          .catch(error => {
-            console.error('Error:', error);
-          });
+            Alert.alert("Ошибка:\n" + data.response);
+          } else {
+            setComments(Array.from(Object.values(data.response), r => r.comment));
+            console.log("Comments after request:\n" + Comments);
+            setOptions(Array.from(Object.values(data.response), r => r.name));
+          }
+        } catch (error) {
+          console.error('Error:', error);
         }
-        else {
-          Alert.alert("Invalid Login or Password");
-        }
-      };
+      } else {
+        Alert.alert("Invalid Login or Password");
+      }
+    };
 
-      fetchData();
-    }, []);
-
+    fetchData();
+  }, []);
 
   return (
-    
     <View style={styles.container}>
-          <View style={{margin: 20}}>
-                <RadioButtons
-                  options={ Options }
-                  onSelection={ setSelectedOption }
-                  selectedOption={ SelectedOption }
-                  renderOption={ renderOption }
-                  renderContainer={ (optionNodes)=> {<View>{optionNodes}</View>} }
-                />
-                <Text>Selected option: { SelectedOption || 'none'}</Text>
-          </View>
-              
-      <Button style={styles.btn} title={'сканировать QR'} onPress={loadscene}/>
+      <Text>Выберите Исследование</Text>
+      <Text>{ Options.length > 0 ? '' : 'Здесь пока пусто'}</Text>
+      <View style={{ margin: 20 }}>
+        <RadioButtons
+          options={Options}
+          onSelection={setSelectedOption}
+          renderOption={renderOption}
+          renderContainer={(optionNodes) => <View>{optionNodes}</View>}
+        />
+      </View>
 
-      <Button style={styles.btn} title={'выйти'} onPress={exit}/>
+      { SelectedOption == '' ? '' : <Button style={styles.btn} title={'Выбрать и продолжить'} onPress={loadscene} /> }
+
+      <Button style={styles.btn} title={'выйти'} onPress={exit} />
       <StatusBar style="auto" />
     </View>
   );
@@ -111,7 +102,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
-    //backgroundColor: 'purple',
   },
   text: {
     color:'green', 
