@@ -46,10 +46,9 @@ def get_user_score(user_name):
 @router.get('/users/password_match/{user_name}/{password}')
 def check_password_match(user_name: str, password: str):
     user_data = DBM.users.get_info(user_name)
-    user_id = user_data['id']
-    print(user_data)
     if not user_data:
-        return JSONResponse(status_code=401, content={'success': False})
+            return JSONResponse(status_code=401, content={'success': False})
+    user_id = user_data['id']
     if user_id == DBM.users.password_match(user_id, password):
         return JSONResponse(status_code=200, content={
             'success': True,
