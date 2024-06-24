@@ -1,0 +1,12 @@
+[submodule "biokeeper-frontend"]
+	path = biokeeper-frontend
+	url = https://github.com/phlaster/biokeeper-frontend.git
+[submodule "biokeeper-backend"]
+	path = biokeeper-backend
+	url = https://github.com/phlaster/biokeeper-backend.git
+[submodule "biokeeper-admin"]
+	path = biokeeper-admin
+	url = https://github.com/phlaster/biokeeper-admin.git
+[submodule "biokeeper-auth"]
+	path = biokeeper-auth
+	url = https://github.com/phlaster/biokeeper-auth.git
