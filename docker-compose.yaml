@@ -1,0 +1,42 @@
+services:
+# AUTH MICROSERICE
+  auth_db:
+    container_name: biokeep_auth_db
+    image: postgres:latest
+    env_file:
+      - biokeeper-auth/.db.env
+    volumes:
+      # Database
+      - ./biokeeper-auth/database/data:/var/lib/postgresql/data
+      # Init scripts
+      - ./biokeeper-auth/database/init_scripts:/docker-entrypoint-initdb.d
+      # Sync time with host machine
+      - /etc/localtime:/etc/localtime:ro
+    restart: always
+    # ports:
+      # - 127.0.0.1:5555:5432
+    healthcheck:
+      test: ["CMD-SHELL", "sh -c 'pg_isready -U biokeeper_auth -d auth_db'"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+  auth_backend:
+    container_name: biokeep_auth_backend
+    build:
+      context: biokeeper-auth/
+    env_file:
+      - biokeeper-auth/.db.env
+      - jwt_keys/.jwt.private.env
+      - jwt_keys/.jwt.public.env
+      - biokeeper-auth/.rtoken.salt.env
+    environment:
+      - POSTGRES_HOST=auth_db
+      - POSTGRES_PORT=5432
+      - DOCKER_CONTAINER=YES
+    depends_on:
+      auth_db:
+        condition: service_healthy
+    restart: always
+    ports:
+      - 127.0.0.1:8000:8000
