@@ -5,29 +5,19 @@ Biosamples annotation tool
 <img src="assets/biokeeper_logo.png" width="300">
 </h1><br>
 
-<style>
-    .container {
-        display: flex;
-        justify-content: space-around;
-        align-items: center;
-        width: 100%;
-    }
-    .square-pic {
-        width: 100px; /* Adjust the size as needed */
-        height: 100px; /* Should be the same as width for a square */
-        object-fit: cover; /* Ensures the image covers the area without distortion */
-    }
-</style>
 
-<div class="container">
-    <img src="assets/pic4.svg" class="square-pic">
-    <img src="assets/pic3.svg" class="square-pic">
-    <img src="assets/pic5.svg" class="square-pic">
-    <img src="assets/pic6.svg" class="square-pic">
-    <img src="assets/pic1.svg" class="square-pic">
-    <img src="assets/pic7.svg" class="square-pic">
-    <img src="assets/pic8.svg" class="square-pic">
-</div>
+<table>
+  <tr>
+    <td><img src="assets/pic4.svg" width=150 height=150></td>
+    <td><img src="assets/pic3.svg" width=150 height=150></td>
+    <td><img src="assets/pic5.svg" width=150 height=150></td>
+    <td><img src="assets/pic6.svg" width=150 height=150></td>
+    <td><img src="assets/pic1.svg" width=150 height=150></td>
+    <td><img src="assets/pic7.svg" width=150 height=150></td>
+    <td><img src="assets/pic8.svg" width=150 height=150></td>
+  </tr>
+ </table>
+
 
 ## For mainteiners
 To work on this or any child repo you need:
