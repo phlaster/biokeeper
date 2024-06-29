@@ -1,5 +1,5 @@
 # Biokeeper
-Biosamples annotation tool
+Citizen science biosample annotation tool
 
 <h1 align="center">
 <img src="assets/biokeeper_logo.png" width="300">
@@ -45,8 +45,8 @@ You should see something like:
 ```sh
 origin	git@github.com:USERNAME/REPONAME.git (fetch)
 origin	git@github.com:USERNAME/REPONAME.git (push)
-upstream	git@github.com:PHLASTER/REPONAME.git (fetch)
-upstream	git@github.com:PHLASTER/REPONAME.git (push)
+upstream	git@github.com:phlaster/REPONAME.git (fetch)
+upstream	git@github.com:phlaster/REPONAME.git (push)
 ```
 6. Configure the default push remote to be `origin`:
 ```sh
