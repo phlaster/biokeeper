@@ -18,6 +18,12 @@ Citizen science biosample annotation tool
   </tr>
  </table>
 
+## Updating submodules
+To update submodules links run:
+```sh
+./submodules_update.sh
+```
+
 
 ## For mainteiners
 To work on this or any child repo you need:
