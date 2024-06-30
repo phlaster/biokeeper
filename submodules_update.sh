@@ -12,8 +12,8 @@ git submodule update --remote --recursive
 # Add the updated submodule paths to the staging area
 git add .
 
-# Commit the changes in the main repository
+# Commit the changes in the master repository
 git commit -m "Update submodules to latest commits"
 
 # Push the changes to the upstream repository
-git push origin main
+git push origin master
