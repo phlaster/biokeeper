@@ -1,4 +1,5 @@
 services:
+
 # AUTH MICROSERICE
   auth_db:
     container_name: biokeep_auth_db
@@ -40,3 +41,53 @@ services:
     restart: always
     ports:
       - 127.0.0.1:8000:8000
+
+
+
+# BACKEND MICROSERICE
+  core_backend:
+    container_name: core_backend
+    build: ./biokeeper-backend
+    restart: always
+    ports:
+      - 8006:1337
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+    # networks:
+    #   - bk
+
+
+
+  core_db:
+    container_name: core_db
+    restart: always
+
+    environment:
+      - POSTGRES_PASSWORD=root
+    image: postgres
+    volumes:
+      # DB initialization scripts
+      - ./biokeeper-backend/postgres/01-functions-and-stuff.sql:/docker-entrypoint-initdb.d/01-functions-and-stuff.sql
+      - ./biokeeper-backend/postgres/02-user.sql:/docker-entrypoint-initdb.d/02-user.sql
+      - ./biokeeper-backend/postgres/03-research.sql:/docker-entrypoint-initdb.d/03-research.sql
+      - ./biokeeper-backend/postgres/04-kit.sql:/docker-entrypoint-initdb.d/04-kit.sql
+      - ./biokeeper-backend/postgres/05-qr.sql:/docker-entrypoint-initdb.d/05-qr.sql
+      - ./biokeeper-backend/postgres/06-sample.sql:/docker-entrypoint-initdb.d/06-sample.sql
+      
+      # Expose DB data folder to host machine
+      - ./biokeeper-backend/postgres/data/:/var/lib/postgresql/data/
+
+      # Sync time with host machine
+      - /etc/localtime:/etc/localtime:ro
+    command: ["postgres", "-c", "log_statement=all"]
+    # networks:
+    #   bk:
+    #     ipv4_address: 172.25.0.10
+
+
+# networks:
+#   bk:
+#     ipam:
+#       config:
+#         - subnet: 172.25.0.0/16
+#           gateway: 172.25.0.1
