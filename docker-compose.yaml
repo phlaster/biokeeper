@@ -53,6 +53,8 @@ services:
       - 8006:1337
     volumes:
       - /etc/localtime:/etc/localtime:ro
+    env_file:
+      - jwt_keys/.jwt.public.env
     # networks:
     #   - bk
 
