@@ -1,4 +1,4 @@
-# <img src="assets/biokeeper_logo.png" width="2%"> Biokeeper
+# <img src="assets/biokeeper_logo.png" width="3%"> Biokeeper
 Citizen science biosample annotation tool
 
 <table>
