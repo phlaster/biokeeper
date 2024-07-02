@@ -18,6 +18,7 @@ Citizen science biosample annotation tool
   </tr>
  </table>
 
+# For users
 ## Project structure
 ### Repositories
 The __Biokeeper__ project file structure organized into several submodules for ease of development several logical parts of the project. Currently they are:
@@ -47,61 +48,60 @@ for updating the submodules from `biokeeper` directory run shell script, that en
 ./submodules_update.sh
 ```
 
-
+# For developers
 ## Setting up GIT
 To work on this or any child repo you need:
 
 1. set up your git credentials (where `USERNAME` is your user name):
-```sh
-git config --global user.name "USERNAME"
-git config --global user.email USERNAME@users.noreply.github.com
-```
-2. In GitHub web UI fork chosen repo.
+    ```sh
+    git config --global user.name "USERNAME"
+    git config --global user.email USERNAME@users.noreply.github.com
+    ```
+
+2. In GitHub web UI __FORK CHOSEN REPO__.
+
 3. Clone the repo to your local machine:
-```sh
-git clone git@github.com:USERNAME/REPONAME.git
-cd REPONAME
-```
-4. Explicitly set upstream:
-```sh
-git remote add upstream git@github.com:phlaster/REPONAME.git
-```
+    ```sh
+    git clone git@github.com:USERNAME/REPONAME.git
+    cd REPONAME
+    ```
+
+4. Explicitly set `upstream`:
+    ```sh
+    git remote add upstream git@github.com:phlaster/REPONAME.git
+    ```
+
 5. Check that everything is as expected:
-```sh
-git remote -v
-```
-You should see something like:
-```sh
-origin	git@github.com:USERNAME/REPONAME.git (fetch)
-origin	git@github.com:USERNAME/REPONAME.git (push)
-upstream	git@github.com:phlaster/REPONAME.git (fetch)
-upstream	git@github.com:phlaster/REPONAME.git (push)
-```
-6. Configure the default push remote to be `origin`:
-```sh
-git config branch.master.remote origin
-git config branch.master.merge refs/heads/master
-```
-7. Fetch changes from the `upstream` repository:
-```sh
-git fetch upstream
-```
-8. Merge changes from the `upstream` repository into your local branch:
-```sh
-git merge upstream/master
-```
-Now you'll be able to pull from `upstream`:
-```sh
-git pull upstream master
-```
-And push to `origin`:
-```sh
-git push origin master
-```
-Everything you have set up can be seen in config file:
-```sh
-cat .git/config
-```
+    ```sh
+    git remote -v
+    ```
+    You should see something like:
+    ```sh
+    origin	git@github.com:USERNAME/REPONAME.git (fetch)
+    origin	git@github.com:USERNAME/REPONAME.git (push)
+    upstream	git@github.com:phlaster/REPONAME.git (fetch)
+    upstream	git@github.com:phlaster/REPONAME.git (push)
+    ```
+
+6. Fetch updates from `upstream` repo:
+    ```sh
+    git fetch upstream
+    ```
+
+7. Merge updates with the branch of your choice:
+    ```sh
+    git checkout master
+    git merge upstream/master
+    # OR
+    git checkout dev
+    git merge upstream/dev
+    ```
+8. Then after work is done push changes into your personal repo:
+    ```sh
+    git push origin master
+    # OR
+    git push origin dev
+    ```
 
 # Contributors
 <table>
