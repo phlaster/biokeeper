@@ -1,15 +1,15 @@
 # <img src="assets/biokeeper_logo.png" width="3%"> Biokeeper
 Citizen science biosample annotation tool
 
-<table>
-  <tr>
-    <td><img src="assets/pic4.svg" width=150 height=150></td>
-    <td><img src="assets/pic3.svg" width=150 height=150></td>
-    <td><img src="assets/pic5.svg" width=150 height=150></td>
-    <td><img src="assets/pic6.svg" width=150 height=150></td>
-    <td><img src="assets/pic1.svg" width=150 height=150></td>
-    <td><img src="assets/pic7.svg" width=150 height=150></td>
-    <td><img src="assets/pic8.svg" width=150 height=150></td>
+<table align='center'>
+  <t0>
+    <td><img src="assets/pic4.svg" height=100></td>
+    <td><img src="assets/pic3.svg" height=100></td>
+    <td><img src="assets/pic5.svg" height=100></td>
+    <td><img src="assets/pic6.svg" height=100></td>
+    <td><img src="assets/pic1.svg" height=100></td>
+    <td><img src="assets/pic7.svg" height=100></td>
+    <td><img src="assets/pic8.svg" height=100></td>
   </tr>
  </table>
 
