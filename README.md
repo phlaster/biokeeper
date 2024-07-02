@@ -18,14 +18,37 @@ Citizen science biosample annotation tool
   </tr>
  </table>
 
-## Updating submodules
-To update submodules links run:
+## Project structure
+### Repositories
+The __Biokeeper__ project file structure organized into several submodules for ease of development several logical parts of the project. Currently they are:
+```sh
+biokeeper # this repo, contains common docker-compose.yml to start all the server-side services
+├── biokeeper-admin    # admin web page
+├── biokeeper-auth     # users authentication service
+├── biokeeper-backend  # core server-side application logic
+└── biokeeper-frontend # ReactJS cross-platform app
+```
+### Microservice architecture
+<img src="assets/biokeeper_architecture_diagram.svg" width=70% height=400>
+
+## Start of work
+First you need to clone this repo with all the submodues:
+```sh
+git clone --recurse-submodules git@github.com:phlaster/biokeeper.git
+cd biokeeper-[submodule]
+```
+After entering submodule, nake sure, you're checked out to the tip of the working branch. Sometimes you'll need something like:
+```sh
+git checkout master
+git pull # to fast forward the latest changes
+```
+for updating the submodules from `biokeeper` directory run shell script, that encloses several usefull git commands:
 ```sh
 ./submodules_update.sh
 ```
 
 
-## For mainteiners
+## Setting up GIT
 To work on this or any child repo you need:
 
 1. set up your git credentials (where `USERNAME` is your user name):
