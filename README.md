@@ -48,7 +48,7 @@ docker-compose up
 ## Setting up GIT
 To work on this or any child repo you need:
 
-1. set up your git credentials (where `USERNAME` is your user name):
+1. Set up your git credentials (where `USERNAME` is your user name):
     ```sh
     git config --global user.name "USERNAME"
     git config --global user.email USERNAME@users.noreply.github.com
