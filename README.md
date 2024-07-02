@@ -36,16 +36,12 @@ biokeeper # this repo, contains common docker-compose.yml to start all the serve
 First you need to clone this repo with all the submodues:
 ```sh
 git clone --recurse-submodules git@github.com:phlaster/biokeeper.git
-cd biokeeper-[submodule]
+cd biokeeper
 ```
-After entering submodule, nake sure, you're checked out to the tip of the working branch. Sometimes you'll need something like:
+Then make sure you put relevant JWT public and private keys into `jwt_keys/` directory and feel free to run:
 ```sh
-git checkout master
-git pull # to fast forward the latest changes
-```
-for updating the submodules from `biokeeper` directory run shell script, that encloses several usefull git commands:
-```sh
-./submodules_update.sh
+docker-compose build
+docker-compose up
 ```
 
 # For developers
