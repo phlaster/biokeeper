@@ -13,6 +13,5 @@
 .externalNativeBuild
 .cxx
 
-jwt_keys/
-!jwt_keys/README.md
+
 *.env
