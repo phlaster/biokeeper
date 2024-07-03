@@ -40,7 +40,7 @@ services:
         condition: service_healthy
     restart: always
     ports:
-      - 127.0.0.1:8000:8000
+      - 1337:8000
 
 
 
@@ -77,6 +77,8 @@ services:
       # Sync time with host machine
       - /etc/localtime:/etc/localtime:ro
     command: ["postgres", "-c", "log_statement=all"]
+    ports:
+      - 127.0.0.1:5556:5432
     # networks:
     #   bk:
     #     ipv4_address: 172.25.0.10
