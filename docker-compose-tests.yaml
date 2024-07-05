@@ -8,9 +8,11 @@ services:
       - biokeeper-auth/.db.env
     volumes:
       # Database
-      - ./biokeeper-auth/database/data_test:/var/lib/postgresql/data
+      # - ./biokeeper-auth/database/data_test:/var/lib/postgresql/data
+
       # Init scripts
       - ./biokeeper-auth/database/init_scripts:/docker-entrypoint-initdb.d
+      
       # Sync time with host machine
       - /etc/localtime:/etc/localtime:ro
     restart: always
