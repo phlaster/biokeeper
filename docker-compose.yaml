@@ -90,7 +90,8 @@ services:
 # RabbitMQ
   mq:
     container_name: biokeeper_mq
-    image: rabbitmq:management-alpine
+    build: 
+      context: ./biokeeper-mq
     restart: always
     ports:
       - 127.0.0.1:5672:5672
@@ -99,7 +100,9 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - ./biokeeper-mq/rabbitmq_data:/var/lib/rabbitmq
     env_file:
-      - ./biokeeper-mq/.rabbitmq.env
+      - ./biokeeper-mq/env_files/.auth_user.env
+      - ./biokeeper-mq/env_files/.core_user.env
+      - ./biokeeper-mq/env_files/.default_user.env
     networks:
       - internal_net
 
