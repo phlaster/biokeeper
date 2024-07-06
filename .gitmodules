@@ -12,4 +12,4 @@
 	url = https://github.com/phlaster/biokeeper-auth.git
 [submodule "biokeeper-mq"]
 	path = biokeeper-mq
-	url = ./biokeeper-mq
+	url = https://github.com/phlaster/biokeeper-mq.git
