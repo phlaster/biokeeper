@@ -41,6 +41,8 @@ services:
     depends_on:
       auth_db:
         condition: service_healthy
+      mq:
+        condition: service_healthy
     restart: always
     ports:
       - 1337:8000
@@ -64,6 +66,9 @@ services:
     networks:
       internal_net:
         ipv4_address: 172.30.0.10
+    depends_on:
+      mq:
+        condition: service_healthy
 
 
 
@@ -107,6 +112,11 @@ services:
       - ./biokeeper-mq/env_files/.default_user.env
     networks:
       - internal_net
+    healthcheck:
+      test: ["CMD", "/scripts/healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
 networks:
   internal_net:
