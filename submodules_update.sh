@@ -8,4 +8,3 @@ git submodule foreach git pull
 git submodule update --remote --recursive
 git add biokeeper-*
 git commit -m "Update submodules to latest commits"
-git push
