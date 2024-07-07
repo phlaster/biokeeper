@@ -21,6 +21,8 @@ services:
       interval: 5s
       timeout: 3s
       retries: 3
+    networks:
+      - internal_net
 
   auth_backend:
     container_name: biokeep_auth_backend
@@ -31,6 +33,7 @@ services:
       - jwt_keys/.jwt.private.env
       - jwt_keys/.jwt.public.env
       - biokeeper-auth/.rtoken.salt.env
+      - ./biokeeper-mq/env_files/.auth_user.env
       - ./.docs.password.env
     environment:
       - POSTGRES_HOST=auth_db
@@ -39,9 +42,13 @@ services:
     depends_on:
       auth_db:
         condition: service_healthy
+      mq:
+        condition: service_healthy
     restart: always
     ports:
       - 1337:8000
+    networks:
+      - internal_net
 
 
 
@@ -57,8 +64,13 @@ services:
     env_file:
       - jwt_keys/.jwt.public.env
       - ./.docs.password.env
-    # networks:
-    #   - bk
+      - ./biokeeper-mq/env_files/.core_user.env
+    networks:
+      internal_net:
+        ipv4_address: 172.30.0.10
+    depends_on:
+      mq:
+        condition: service_healthy
 
 
 
@@ -81,14 +93,36 @@ services:
     command: ["postgres", "-c", "log_statement=all"]
     ports:
       - 127.0.0.1:5556:5432
-    # networks:
-    #   bk:
-    #     ipv4_address: 172.25.0.10
+    networks:
+      - internal_net
 
+# RabbitMQ
+  mq:
+    container_name: biokeeper_mq
+    build: 
+      context: ./biokeeper-mq
+    restart: always
+    ports:
+      - 127.0.0.1:5672:5672
+      - 127.0.0.1:15672:15672
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./biokeeper-mq/rabbitmq_data:/var/lib/rabbitmq
+    env_file:
+      - ./biokeeper-mq/env_files/.auth_user.env
+      - ./biokeeper-mq/env_files/.core_user.env
+      - ./biokeeper-mq/env_files/.default_user.env
+    networks:
+      - internal_net
+    healthcheck:
+      test: ["CMD", "/scripts/healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
-# networks:
-#   bk:
-#     ipam:
-#       config:
-#         - subnet: 172.25.0.0/16
-#           gateway: 172.25.0.1
+networks:
+  internal_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/16
