@@ -34,6 +34,7 @@ services:
       - jwt_keys/.jwt.public.env
       - biokeeper-auth/.rtoken.salt.env
       - ./biokeeper-mq/env_files/.auth_user.env
+      - ./.docs.password.env
     environment:
       - POSTGRES_HOST=auth_db
       - POSTGRES_PORT=5432
@@ -63,6 +64,7 @@ services:
     env_file:
       - jwt_keys/.jwt.public.env
       - ./biokeeper-mq/env_files/.core_user.env
+      - ./.docs.password.env
     networks:
       internal_net:
         ipv4_address: 172.30.0.10
