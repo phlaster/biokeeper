@@ -42,8 +42,8 @@ services:
     depends_on:
       auth_db:
         condition: service_healthy
-      mq:
-        condition: service_healthy
+      # mq:
+      #   condition: service_healthy
     restart: always
     ports:
       - 1337:8000
