@@ -22,7 +22,7 @@ biokeeper # this repo, contains common docker-compose.yml to start all the serve
 ├── biokeeper-admin    # admin web page
 ├── biokeeper-auth     # users authentication service
 ├── biokeeper-backend  # core server-side application logic
-├── biokeeper-frontend # ReactJS cross-platform app
+├── biokeeper-frontend # React Native cross-platform app
 └── biokeeper-mq       # RabbitMQ message broker
 ```
 ### Microservice architecture
