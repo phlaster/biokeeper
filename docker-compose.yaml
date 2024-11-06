@@ -120,6 +120,16 @@ services:
       timeout: 5s
       retries: 3
 
+
+# ADMIN PANEL
+  admin:
+    container_name: biokeeper_admin
+    build: 
+      context: ./biokeeper-admin
+    ports:
+      - 127.0.0.1:8666:80
+    restart: always
+    
 networks:
   internal_net:
     driver: bridge
