@@ -1,0 +1,5 @@
+test/
+Dockerfile
+src/__pycache__/
+src/DBM/__pycache__/
+src/SQLModel/

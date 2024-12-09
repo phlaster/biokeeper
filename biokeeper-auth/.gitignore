@@ -1,0 +1,11 @@
+*.env
+
+/database/data/*
+/database/data_test/*
+
+*.log
+
+.venv/
+__pycache__/
+
+*.log
