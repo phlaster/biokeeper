@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+  nginx:
+    build: ./nginx
+    ports:
+      - "7999:80"
+    volumes:
+      - ./nginx/html:/usr/share/nginx/html:ro
